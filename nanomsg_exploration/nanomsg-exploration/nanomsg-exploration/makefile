@@ -14,7 +14,7 @@ CFILES = list.c main.c
 LFLAGS = -L/usr/local/lib
 
 # Libraries
-LIBS = -lnanomsg
+LIBS = -lnanomsg -lpthread
 
 # Targets
 TARGET = explo
