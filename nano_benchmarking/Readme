@@ -1,0 +1,19 @@
+Benchmarking nanomsg
+
+Folders:
+- inproc, all inproc programs (nano_inproc, pthread_inproc, java_inproc)
+- ipc, all ipc programs (nano_ipc, pipe_ipc, shared_ipc)
+- tcp, all tcp programs (nano_tcp, socket_tcp)
+- common, common code (list)
+
+- build, builded programs destination
+- output, result from benchmarking
+
+Compilation
+- make all (or make inproc, make ipc, make tcp)
+
+Clean
+- make clean (will delete build folder)
+
+Benchmarking
+- python benchmark.py
