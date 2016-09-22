@@ -2,5 +2,6 @@
 obj/
 Debug/
 Release/
+x64/
 *.sdf
 *.opendb
