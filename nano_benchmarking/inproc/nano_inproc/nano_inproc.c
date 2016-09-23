@@ -10,8 +10,8 @@
 
 #define SOCKET_ADDRESS "inproc://fr_master1"
 
-#define THREAD_COUNT 10
-#define UPDATE_COUNT 10000
+#define THREAD_COUNT 30
+#define UPDATE_COUNT 50000
 #define UPDATE_SIZE 10 // Not implemented yet 
 
 struct timespec diff(struct timespec start, struct timespec end);
@@ -30,9 +30,11 @@ char* data;
 // Thread that send message to add to list
 void* send_proc(void* x_void_ptr) {
 	int* socket_id_ptr = (int*)x_void_ptr;
-	printf("Client socket %d start sending\n", (*socket_id_ptr));
 	for (int i = 0; i < UPDATE_COUNT; i++) {
-		nn_send(1, data, len, 0);
+		int e = nn_send((*socket_id_ptr), data, len, 0);
+		if (e < 0) {
+			printf("Thread sending error %d\n", e);
+		}
 	}
 }
 
@@ -64,10 +66,7 @@ int main() {
 	pthread_t client_thread[THREAD_COUNT];
 
 	// Timing variables
-	struct timespec pstart, pend, start, end;
-
-	clock_gettime(CLOCK_MONOTONIC, &pstart);
-	printf("Hello nanomsg\n");
+	struct timespec start, end;
 
 	// Prepare linked list
 	list = MakeEmpty(NULL);
@@ -79,7 +78,6 @@ int main() {
 		printf("Error creating sa socket");
 		return -1;
 	}
-	printf("Server socket %d\n", server_socket);
 
 	for (int i = 0; i < THREAD_COUNT; i++) {
 		client_socket[i] = nn_socket(AF_SP, NN_PUSH);
@@ -87,7 +85,6 @@ int main() {
 			printf("Error creating sb socket");
 			return -1;
 		}
-		printf("Socket %i %d\n", i, client_socket[i]);
 	}
 
 	// Connect them to the inproc addr
@@ -95,7 +92,6 @@ int main() {
 		printf("Error on binding\n");
 		return -1;
 	}
-	printf("Server binded\n");
 
 	for (int i = 0; i < THREAD_COUNT; i++) {
 		int r = nn_connect(client_socket[i], SOCKET_ADDRESS); // Variable number of client
@@ -104,7 +100,6 @@ int main() {
 			return -1;
 		}
 	}
-	printf("Clients connected\n");
 
 	data = "data";
 	len = strlen(data);
@@ -124,27 +119,23 @@ int main() {
 	}
 
 	// Wait for all client to be done
-	printf("Starting join\n");
 	for (int i = 0; i < THREAD_COUNT; i++) {
 		if (pthread_join(client_thread[i], NULL)) {
 			printf("Error joining\n");
 			return 0;
 		}
 	}
-	printf("Join done\n");
 
 	pthread_join(server_thread, NULL);
 
 	clock_gettime(CLOCK_MONOTONIC, &end);
-	printf("Communication elapse %ld\n", diff(start, end).tv_nsec/1000000);
+	printf("%ld\n", diff(start, end).tv_nsec/1000000); // Not working need 64 bits
+	printf("%ld\n", diff(start, end).tv_sec);
 
 	nn_shutdown(server_socket, 0);
 	for (int i = 0; i < THREAD_COUNT; i++) {
 		nn_shutdown(client_socket[i], 0);
 	}
-
-	clock_gettime(CLOCK_MONOTONIC, &pend);
-	printf("Program elapse %ld\n", diff(pstart, pend).tv_nsec/1000000);
 
 	return 0;
 }
