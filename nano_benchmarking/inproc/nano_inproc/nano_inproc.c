@@ -10,10 +10,6 @@
 
 #define SOCKET_ADDRESS "inproc://fr_master1"
 
-#define THREAD_COUNT 30
-#define UPDATE_COUNT 50000
-#define UPDATE_SIZE 10 // Not implemented yet 
-
 struct timespec diff(struct timespec start, struct timespec end);
 
 // Global linked list
@@ -27,10 +23,16 @@ int server_socket;
 int len;
 char* data;
 
+// Parameters
+int thread_count;
+int update_count;
+int update_size;
+
+
 // Thread that send message to add to list
 void* send_proc(void* x_void_ptr) {
 	int* socket_id_ptr = (int*)x_void_ptr;
-	for (int i = 0; i < UPDATE_COUNT; i++) {
+	for (int i = 0; i < update_count; i++) {
 		int e = nn_send((*socket_id_ptr), data, len, 0);
 		if (e < 0) {
 			printf("Thread sending error %d\n", e);
@@ -42,14 +44,14 @@ void* send_proc(void* x_void_ptr) {
 void* recv_proc(void* x_void_ptr) {
 	char* buf = (char*)malloc(len + 1);
 	int i = 0;
-	while (i<(THREAD_COUNT*UPDATE_COUNT)) {
+	while (i<(thread_count*update_count)) {
 		int e = nn_recv(server_socket, buf, len + 1, 0);
 		if (e < 0) {
 			printf("Thread receiving error %d\n", e);
 		}
 		//printf("Thread received %s\n", buf);
 		// Insert into linked list
-		Insert(UPDATE_SIZE, list, pos);
+		Insert(update_size, list, pos);
 		pos = Advance(pos);
 
 		i++;
@@ -57,13 +59,18 @@ void* recv_proc(void* x_void_ptr) {
 	free(buf);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+	// argv
+	thread_count = atoi(argv[1]);
+	update_count = atoi(argv[2]);
+	update_size = atoi(argv[3]);
+
 	// Socket variable
-	int client_socket[THREAD_COUNT];
+	int client_socket[thread_count];
 
 	// Threads
 	pthread_t server_thread;
-	pthread_t client_thread[THREAD_COUNT];
+	pthread_t client_thread[thread_count];
 
 	// Timing variables
 	struct timespec start, end;
@@ -79,7 +86,7 @@ int main() {
 		return -1;
 	}
 
-	for (int i = 0; i < THREAD_COUNT; i++) {
+	for (int i = 0; i < thread_count; i++) {
 		client_socket[i] = nn_socket(AF_SP, NN_PUSH);
 		if (client_socket[i] < 0) {
 			printf("Error creating sb socket");
@@ -93,7 +100,7 @@ int main() {
 		return -1;
 	}
 
-	for (int i = 0; i < THREAD_COUNT; i++) {
+	for (int i = 0; i < thread_count; i++) {
 		int r = nn_connect(client_socket[i], SOCKET_ADDRESS); // Variable number of client
 		if (r < 1) {
 			printf("Error on connect\n");
@@ -111,7 +118,7 @@ int main() {
 		return -1;
 	}
 
-	for (int i = 0; i < THREAD_COUNT; i++) {
+	for (int i = 0; i < thread_count; i++) {
 		if (pthread_create(&client_thread[i], NULL, send_proc, &client_socket[i])) {
 			printf("Error creating client %d thread\n", i);
 			return -1;
@@ -119,7 +126,7 @@ int main() {
 	}
 
 	// Wait for all client to be done
-	for (int i = 0; i < THREAD_COUNT; i++) {
+	for (int i = 0; i < thread_count; i++) {
 		if (pthread_join(client_thread[i], NULL)) {
 			printf("Error joining\n");
 			return 0;
@@ -133,7 +140,7 @@ int main() {
 	printf("%ld\n", diff(start, end).tv_sec);
 
 	nn_shutdown(server_socket, 0);
-	for (int i = 0; i < THREAD_COUNT; i++) {
+	for (int i = 0; i < thread_count; i++) {
 		nn_shutdown(client_socket[i], 0);
 	}
 
