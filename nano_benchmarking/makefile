@@ -38,6 +38,9 @@ java_inproc:
 	$(JC) $(JFLAGS) inproc/java_inproc/java_inproc.java -d build/
 
 pthread_inproc:
+	@echo Building pthread_inproc
+	$(CC) $(CFLAGS) $(INCLUDES) inproc/pthread_inproc/pthread_inproc.c -c -o build/pthread_inproc.o $(LFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) build/pthread_inproc.o build/list.o -o build/pthread_inproc $(LFLAGS) $(LIBS)
 
 nano_ipc:
 

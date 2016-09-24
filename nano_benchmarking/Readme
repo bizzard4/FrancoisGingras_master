@@ -16,4 +16,4 @@ Clean
 - make clean (will delete build folder)
 
 Benchmarking
-- python benchmark.py
+- python3 benchmark.py

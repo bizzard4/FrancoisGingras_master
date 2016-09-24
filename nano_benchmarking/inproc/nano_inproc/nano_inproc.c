@@ -38,6 +38,7 @@ void* send_proc(void* x_void_ptr) {
 			printf("Thread sending error %d\n", e);
 		}
 	}
+	pthread_exit((void*) 0);
 }
 
 // Receiving thread to update list, no lock required because it is message passing
@@ -57,6 +58,7 @@ void* recv_proc(void* x_void_ptr) {
 		i++;
 	}
 	free(buf);
+	pthread_exit((void*) 0);
 }
 
 int main(int argc, char* argv[]) {
@@ -136,8 +138,8 @@ int main(int argc, char* argv[]) {
 	pthread_join(server_thread, NULL);
 
 	clock_gettime(CLOCK_MONOTONIC, &end);
-	printf("%ld\n", diff(start, end).tv_nsec/1000000); // Not working need 64 bits
-	printf("%ld\n", diff(start, end).tv_sec);
+	//printf("%ld\n", diff(start, end).tv_nsec/1000000); // Not working need 64 bits
+	//printf("%ld\n", diff(start, end).tv_sec);
 
 	nn_shutdown(server_socket, 0);
 	for (int i = 0; i < thread_count; i++) {
