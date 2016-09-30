@@ -2,7 +2,7 @@
 import sys
 import time
 import csv
-from subprocess import run, DEVNULL
+from subprocess import run, Popen, DEVNULL
 
 # Constants
 THREAD_START = 2
@@ -20,26 +20,40 @@ UPDATE_SIZE_STEP = 1 # To implement
 torun = sys.argv[1];
 print("Benchmarking for " + torun)
 
-# Timing function for the java program
-def javaTime(process_name, thread_count, update_count, update_size):
+# Timing function for a single process
+def timethis(command, thread_count, update_count, update_size, is_java):
 	start = time.time()
-	run(["java", "-cp", "build/", process_name, str(thread_count), str(update_count), str(update_size)], stdout=DEVNULL)
-	end = time.time()
-	return int(round((end-start)*1000))
-	
-# Timing function for a native program
-def processTime(command, thread_count, update_count, update_size):
-	start = time.time()
-	run(["build/" + command, str(thread_count), str(update_count), str(update_size)], stdout=DEVNULL)
+
+	# Run the process
+	if (is_java):
+		run(["java", "-cp", "build/", process_name, str(thread_count), str(update_count), str(update_size)], stdout=DEVNULL)
+	else:
+		run(["build/" + command, str(thread_count), str(update_count), str(update_size)], stdout=DEVNULL)
+
 	end = time.time()
 	return int(round((end-start)*1000))
 
-# Timing function
-def timethis(command, thread_count, update_count, update_size, is_java):
-	if (is_java):
-		return javaTime(command, thread_count, update_count, update_size)
-	else:
-		return processTime(command, thread_count, update_count, update_size)
+# Timing function for a multi-process
+def batchtimethis(command, thread_count, update_count, update_size):
+	start = time.time()
+
+	addr = "ipc://nano_ipc_" + str(time.time()*10000000);
+
+	# Start server
+	svr_proc = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 's', addr])
+
+	# Start all client one by one
+	for i in range(0, thread_count):
+		t = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 'c', addr])
+
+	print("Waiting on server thread to finish")
+
+	svr_proc.wait()
+
+	# Wait for all to be finish
+	# TODO : HOW TO
+	end = time.time()
+	return int(round((end-start)*1000))
 	
 # Method to write the result to the output
 def writeRes(test_id, test_params, test_time, csvw):
@@ -48,8 +62,8 @@ def writeRes(test_id, test_params, test_time, csvw):
 		print("Test id:" + str(test_id))
 	return
 	
-# Execute a test case
-def executeTestCase(command, is_java):
+# Execute a INPROC test case
+def executeInprocTestCase(command, is_java):
 	# First thread count
 	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
 		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -74,6 +88,31 @@ def executeTestCase(command, is_java):
 	
 	return
 
+# Execute a IPC test case
+def executeIpcTestCase(command):
+	# First thread count
+	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
+		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		csvwriter.writerow(['test_id', 'test_param', 'test_time'])
+		#i = 0
+		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
+			#i+=1
+			#writeRes(i, "TC=" + str(tc), batchtimethis(command, tc, 1000, 10), csvwriter)
+		writeRes(1, "TC=" + str(1), batchtimethis(command, 1, 1000, 10), csvwriter)
+
+	# Update count
+	#with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
+		#csvwriter = csv.writer(uccsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		#csvwriter.writerow(['test_id', 'test_param', 'test_time'])
+		#i = 0
+		#for uc in range(UPDATE_COUNT_START, UPDATE_COUNT_MAX, UPDATE_COUNT_STEP):
+		#	i+=1
+		#	writeRes(i, "UC=" + str(uc), batchtimethis(command, 4, uc, 10), csvwriter)
+		#writeRes(i+1, "UC=" + str(UPDATE_COUNT_MAX), batchtimethis(command, 4, UPDATE_COUNT_MAX, 10), csvwriter)
+
+	# Update size TODO
+	return
+
 # Creating benchmark target function
 def all():
 	inproc()
@@ -89,19 +128,19 @@ def inproc():
 
 def nano_inproc():
 	print("== nano_inproc starting ==")
-	executeTestCase("nano_inproc", False)
+	executeInprocTestCase("nano_inproc", False)
 	print("== nano_inproc done ==")
 	return
 
 def java_inproc():
 	print("== java_inproc starting ==")
-	executeTestCase("java_inproc", True)
+	executeInprocTestCase("java_inproc", True)
 	print("== java_inproc done ==")
 	return
 
 def pthread_inproc():
 	print("== pthread_inproc starting ==")
-	executeTestCase("pthread_inproc", False)
+	executeInprocTestCase("pthread_inproc", False)
 	print("== pthread_inproc done ==")
 	return
 
@@ -112,6 +151,9 @@ def ipc():
 	return
 
 def nano_ipc():
+	print("== nano_ipc starting ==")
+	executeIpcTestCase("nano_ipc")
+	print("== nano_ipc done ==")
 	return
 
 def pipe_ipc():

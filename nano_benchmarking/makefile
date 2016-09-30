@@ -43,6 +43,10 @@ pthread_inproc:
 	$(CC) $(CFLAGS) $(INCLUDES) build/pthread_inproc.o build/list.o -o build/pthread_inproc $(LFLAGS) $(LIBS)
 
 nano_ipc:
+	@echo Building nano_ipc
+	$(CC) $(CFLAGS) $(INCLUDES) ipc/nano_ipc/nano_ipc.c -c -o build/nano_ipc.o $(LFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) build/nano_ipc.o build/list.o -o build/nano_ipc $(LFLAGS) $(LIBS)
+
 
 pipe_ipc:
 
