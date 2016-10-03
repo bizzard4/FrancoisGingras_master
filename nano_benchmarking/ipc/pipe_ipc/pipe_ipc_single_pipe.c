@@ -1,17 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "nn.h"
-#include "pipeline.h"
-#include "ipc.h"
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "list.h"
+
+// Named pipe information
+int fd;
+char* myfifo;
 
 // Global linked list
 List list;
 Position pos;
-
-// Global socket id
-int socket;
 
 // Global communication variables
 int len;
@@ -27,12 +29,12 @@ char execution_mode;
 // Thread that send message to add to list
 void send_proc() {
 	for (int i = 0; i < update_count; i++) {
-		int e = nn_send(socket, data, len, 0);
-		//printf("Has send %d\n", i); // THIS SLOW SEND AND MAKE ALL WORK
+		int ws = write(fd, data, len);
+		printf("Has send, ws=%d i=%d\n", ws, i); // THIS SLOW SEND AND MAKE ALL WORK
 		//sched_yield();
-		if (e <= 0) {
-			printf("Thread sending error %d\n", e);
-		}
+		//if (e <= 0) {
+		//	printf("Thread sending error %d\n", e);
+		//}
 	}
 }
 
@@ -41,18 +43,22 @@ void recv_proc() {
 	char* buf = (char*)malloc(len + 1);
 	int i = 0;
 	while (i<(thread_count*update_count)) {
-		int e = nn_recv(socket, buf, len + 1, 0);
-		int error = nn_errno();
-		if (e <= 0) {
-			printf("Thread receiving error %d\n", error);
-		}
-		//printf("Thread received %d\n", i);
-		//sched_yield();
-		// Insert into linked list
-		Insert(update_size, list, pos);
-		pos = Advance(pos);
+		int rs = read(fd, buf, len);
+		if (rs > 0) {
+			//int error = nn_errno();
+			//if (e <= 0) {
+			//	printf("Thread receiving error %d\n", error);
+			//}
+			printf("Thread received, rs=%d i=%d\n", rs, i);
+			//sched_yield();
+			// Insert into linked list
+			Insert(update_size, list, pos);
+			pos = Advance(pos);
 
-		i++;
+			i++;
+		} else if (i < 0) {
+			printf("Nothign received %d\n", errno);
+		}
 	}
 	free(buf);
 }
@@ -63,6 +69,7 @@ int main(int argc, char* argv[]) {
 	update_count = atoi(argv[2]);
 	update_size = atoi(argv[3]);
 	execution_mode = argv[4][0]; // c=client, s=server
+	myfifo = argv[5];
 
 	if ((execution_mode != 's') && (execution_mode != 'c')) {
 		printf("Execution mode need to be s or c\n");
@@ -73,33 +80,17 @@ int main(int argc, char* argv[]) {
 	list = MakeEmpty(NULL);
 	pos = Header(list);
 
-	// Prepare nano socket
-	if (execution_mode=='s') {
-		socket = nn_socket(AF_SP, NN_PULL);
-		if (socket < 0) {
-			printf("Error creating server socket\n");
+	// Prepare named pipe
+	if (execution_mode=='s') { // Server is reader
+		fd = open(myfifo, O_CREAT|O_RDONLY|O_TRUNC, S_IRWXU);
+		if (fd < 0) {
+			printf("Error opening server pipe %d:%s\n", errno, strerror(errno));
 			return -1;
 		}
-	} else {
-		socket = nn_socket(AF_SP, NN_PUSH);
-		if (socket < 0) {
-			printf("Error creating client socket\n");
-			return -1;
-		}
-	}
-
-	// Connect them to the inproc addr
-	int eid = 0;
-	if (execution_mode=='s') {
-		eid = nn_bind(socket, argv[5]);
-		if (eid < 1) {
-			printf("Error on binding %d\n", nn_errno());
-			return -1;
-		}
-	} else {
-		eid = nn_connect(socket, argv[5]);
-		if (eid < 1) {
-			printf("Error on connect\n");
+	} else { // Clients are writer
+		fd = open(myfifo, O_WRONLY);
+		if (fd < 0) {
+			printf("Error opening client pipe %d:%s\n", errno, strerror(errno));
 			return -1;
 		}
 	}
@@ -114,7 +105,10 @@ int main(int argc, char* argv[]) {
 		send_proc();
 	}
 
-	nn_shutdown(socket, eid);
+	close(fd);
+	if (execution_mode=='s') { // Server kill pipe
+		unlink(myfifo);
+	}
 
 	return 0;
 }

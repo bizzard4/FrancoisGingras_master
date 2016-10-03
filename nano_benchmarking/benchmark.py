@@ -34,17 +34,15 @@ def timethis(command, thread_count, update_count, update_size, is_java):
 	return int(round((end-start)*1000))
 
 # Timing function for a multi-process
-def batchtimethis(command, thread_count, update_count, update_size):
+def batchtimethis(command, thread_count, update_count, update_size, addr):
 	start = time.time()
-
-	addr = "ipc://nano_ipc_" + str(time.time()*10000000);
 
 	# Start server
 	svr_proc = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 's', addr])
 
 	# Start all client one by one
 	for i in range(0, thread_count):
-		t = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 'c', addr])
+		t = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 'c', addr+"-"+str(i)])
 
 	print("Waiting on server thread to finish")
 
@@ -89,16 +87,16 @@ def executeInprocTestCase(command, is_java):
 	return
 
 # Execute a IPC test case
-def executeIpcTestCase(command):
+def executeIpcTestCase(command, addr_start):
 	# First thread count
 	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
 		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 		csvwriter.writerow(['test_id', 'test_param', 'test_time'])
 		#i = 0
 		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
-			#i+=1
-			#writeRes(i, "TC=" + str(tc), batchtimethis(command, tc, 1000, 10), csvwriter)
-		writeRes(1, "TC=" + str(1), batchtimethis(command, 1, 1000, 10), csvwriter)
+		#	i+=1
+		#	writeRes(i, "TC=" + str(tc), batchtimethis(command, tc, 100, 10), csvwriter)
+		writeRes(100, "TC=" + str(100), batchtimethis(command, 100, 100000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
 
 	# Update count
 	#with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
@@ -152,11 +150,14 @@ def ipc():
 
 def nano_ipc():
 	print("== nano_ipc starting ==")
-	executeIpcTestCase("nano_ipc")
+	executeIpcTestCase("nano_ipc", "ipc://nano_ipc_")
 	print("== nano_ipc done ==")
 	return
 
 def pipe_ipc():
+	print("== pipe_ipc starting ==")
+	executeIpcTestCase("pipe_ipc", "/tmp/pipe_ipc_")
+	print("== pipe_ipc done ==")
 	return
 
 def shared_ipc():

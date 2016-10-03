@@ -47,8 +47,10 @@ nano_ipc:
 	$(CC) $(CFLAGS) $(INCLUDES) ipc/nano_ipc/nano_ipc.c -c -o build/nano_ipc.o $(LFLAGS) $(LIBS)
 	$(CC) $(CFLAGS) $(INCLUDES) build/nano_ipc.o build/list.o -o build/nano_ipc $(LFLAGS) $(LIBS)
 
-
 pipe_ipc:
+	@echo Building pipe_ipc
+	$(CC) $(CFLAGS) $(INCLUDES) ipc/pipe_ipc/pipe_ipc.c -c -o build/pipe_ipc.o $(LFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) build/pipe_ipc.o build/list.o -o build/pipe_ipc $(LFLAGS) $(LIBS)
 
 shared_ipc:
 
