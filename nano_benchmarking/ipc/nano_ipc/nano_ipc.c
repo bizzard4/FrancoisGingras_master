@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "nn.h"
-#include "pipeline.h"
+#include "reqrep.h"
 #include "ipc.h"
 #include "list.h"
 
@@ -29,7 +30,7 @@ void send_proc() {
 	for (int i = 0; i < update_count; i++) {
 		int e = nn_send(socket, data, len, 0);
 		//printf("Has send %d\n", i); // THIS SLOW SEND AND MAKE ALL WORK
-		//sched_yield();
+		usleep(5000);
 		if (e <= 0) {
 			printf("Thread sending error %d\n", e);
 		}
@@ -38,10 +39,11 @@ void send_proc() {
 
 // Receiving thread to update list, no lock required because it is message passing
 void recv_proc() {
-	char* buf = (char*)malloc(len + 1);
+	char* buf = (char*)malloc(len);
 	int i = 0;
 	while (i<(thread_count*update_count)) {
-		int e = nn_recv(socket, buf, len + 1, 0);
+		//printf("Starting receibing\n");
+		int e = nn_recv(socket, buf, len, 0);
 		int error = nn_errno();
 		if (e <= 0) {
 			printf("Thread receiving error %d\n", error);
@@ -75,13 +77,13 @@ int main(int argc, char* argv[]) {
 
 	// Prepare nano socket
 	if (execution_mode=='s') {
-		socket = nn_socket(AF_SP, NN_PULL);
+		socket = nn_socket(AF_SP, NN_REP);
 		if (socket < 0) {
 			printf("Error creating server socket\n");
 			return -1;
 		}
 	} else {
-		socket = nn_socket(AF_SP, NN_PUSH);
+		socket = nn_socket(AF_SP, NN_REQ);
 		if (socket < 0) {
 			printf("Error creating client socket\n");
 			return -1;

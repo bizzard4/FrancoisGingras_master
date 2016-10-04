@@ -21,7 +21,7 @@ torun = sys.argv[1];
 print("Benchmarking for " + torun)
 
 # Timing function for a single process
-def timethis(command, thread_count, update_count, update_size, is_java):
+def singleProcessTiming(command, thread_count, update_count, update_size, is_java):
 	start = time.time()
 
 	# Run the process
@@ -34,7 +34,7 @@ def timethis(command, thread_count, update_count, update_size, is_java):
 	return int(round((end-start)*1000))
 
 # Timing function for a multi-process
-def batchtimethis(command, thread_count, update_count, update_size, addr):
+def multiProcessTiming(command, thread_count, update_count, update_size, addr, add_thread_id):
 	start = time.time()
 
 	# Start server
@@ -42,7 +42,10 @@ def batchtimethis(command, thread_count, update_count, update_size, addr):
 
 	# Start all client one by one
 	for i in range(0, thread_count):
-		t = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 'c', addr+"-"+str(i)])
+		final_addr = addr;
+		if (add_thread_id):
+			final_addr = final_addr + "-" + str(i)
+		t = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 'c', final_addr])
 
 	print("Waiting on server thread to finish")
 
@@ -69,8 +72,8 @@ def executeInprocTestCase(command, is_java):
 		i = 0
 		for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
 			i+=1
-			writeRes(i, "TC=" + str(tc), timethis(command, tc, 1000, 10, is_java), csvwriter)
-		writeRes(i+1, "TC=" + str(THREAD_MAX), timethis(command, THREAD_MAX, 1000, 10, is_java), csvwriter)
+			writeRes(i, "TC=" + str(tc), singleProcessTiming(command, tc, 1000, 10, is_java), csvwriter)
+		writeRes(i+1, "TC=" + str(THREAD_MAX), singleProcessTiming(command, THREAD_MAX, 1000, 10, is_java), csvwriter)
 
 	# Update count
 	with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
@@ -79,15 +82,15 @@ def executeInprocTestCase(command, is_java):
 		i = 0
 		for uc in range(UPDATE_COUNT_START, UPDATE_COUNT_MAX, UPDATE_COUNT_STEP):
 			i+=1
-			writeRes(i, "UC=" + str(uc), timethis(command, 4, uc, 10, is_java), csvwriter)
-		writeRes(i+1, "UC=" + str(UPDATE_COUNT_MAX), timethis(command, 4, UPDATE_COUNT_MAX, 10, is_java), csvwriter)
+			writeRes(i, "UC=" + str(uc), singleProcessTiming(command, 4, uc, 10, is_java), csvwriter)
+		writeRes(i+1, "UC=" + str(UPDATE_COUNT_MAX), singleProcessTiming(command, 4, UPDATE_COUNT_MAX, 10, is_java), csvwriter)
 
 	# Update size TODO
 	
 	return
 
 # Execute a IPC test case
-def executeIpcTestCase(command, addr_start):
+def executeIpcTestCase(command, addr_start, add_thread_id):
 	# First thread count
 	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
 		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -95,8 +98,33 @@ def executeIpcTestCase(command, addr_start):
 		i = 0
 		for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
 			i+=1
-			writeRes(i, "TC=" + str(tc), batchtimethis(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
-		writeRes(i+1, "TC=" + str(THREAD_MAX), batchtimethis(command, THREAD_MAX, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
+			writeRes(i, "TC=" + str(tc), multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), add_thread_id), csvwriter)
+		writeRes(i+1, "TC=" + str(THREAD_MAX), multiProcessTiming(command, THREAD_MAX, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), add_thread_id), csvwriter)
+
+	# Update count
+	with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
+		csvwriter = csv.writer(uccsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		csvwriter.writerow(['test_id', 'test_param', 'test_time'])
+		i = 0
+		for uc in range(UPDATE_COUNT_START, UPDATE_COUNT_MAX, UPDATE_COUNT_STEP):
+			i+=1
+			writeRes(i, "UC=" + str(uc), multiProcessTiming(command, 4, uc, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), add_thread_id), csvwriter)
+		writeRes(i+1, "UC=" + str(UPDATE_COUNT_MAX), multiProcessTiming(command, 4, UPDATE_COUNT_MAX, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), add_thread_id), csvwriter)
+
+	# Update size TODO
+	return
+
+# Temp test case to test various combinaison
+def tempTestCase(command, addr_start):
+	# First thread count
+	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
+		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		csvwriter.writerow(['test_id', 'test_param', 'test_time'])
+		#i = 0
+		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
+		#	i+=1
+		#	writeRes(i, "TC=" + str(tc), multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
+		writeRes(100, "TC=" + str(10), multiProcessTiming(command, 100, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
 
 	# Update count
 	#with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
@@ -105,8 +133,8 @@ def executeIpcTestCase(command, addr_start):
 		#i = 0
 		#for uc in range(UPDATE_COUNT_START, UPDATE_COUNT_MAX, UPDATE_COUNT_STEP):
 		#	i+=1
-		#	writeRes(i, "UC=" + str(uc), batchtimethis(command, 4, uc, 10), csvwriter)
-		#writeRes(i+1, "UC=" + str(UPDATE_COUNT_MAX), batchtimethis(command, 4, UPDATE_COUNT_MAX, 10), csvwriter)
+		#	writeRes(i, "UC=" + str(uc), multiProcessTiming(command, 4, uc, 10), csvwriter)
+		#writeRes(i+1, "UC=" + str(UPDATE_COUNT_MAX), multiProcessTiming(command, 4, UPDATE_COUNT_MAX, 10), csvwriter)
 
 	# Update size TODO
 	return
@@ -150,13 +178,13 @@ def ipc():
 
 def nano_ipc():
 	print("== nano_ipc starting ==")
-	executeIpcTestCase("nano_ipc", "ipc://nano_ipc_")
+	executeIpcTestCase("nano_ipc", "ipc://nano_ipc_", False)
 	print("== nano_ipc done ==")
 	return
 
 def pipe_ipc():
 	print("== pipe_ipc starting ==")
-	executeIpcTestCase("pipe_ipc", "/tmp/pipe_ipc_")
+	executeIpcTestCase("pipe_ipc", "/tmp/pipe_ipc_", True)
 	print("== pipe_ipc done ==")
 	return
 
