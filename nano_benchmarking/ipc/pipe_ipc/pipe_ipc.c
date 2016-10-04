@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include "list.h"
@@ -29,7 +30,7 @@ char execution_mode;
 void send_proc() {
 	for (int i = 0; i < update_count; i++) {
 		int ws = write(fd[0], data, len);
-		printf("Has send, ws=%d i=%d\n", ws, i); // THIS SLOW SEND AND MAKE ALL WORK
+		//printf("Has send, ws=%d i=%d\n", ws, i); // THIS SLOW SEND AND MAKE ALL WORK
 		//sched_yield();
 		if (ws < 0) {
 			printf("Thread sending error %s\n", strerror(errno));
@@ -49,7 +50,7 @@ void recv_proc() {
 				//if (e <= 0) {
 				//	printf("Thread receiving error %d\n", error);
 				//}
-				printf("Thread received, rs=%d i=%d t=%d\n", rs, i, t);
+				//printf("Thread received, rs=%d i=%d t=%d\n", rs, i, t);
 				//sched_yield();
 				// Insert into linked list
 				Insert(update_size, list, pos);
@@ -91,7 +92,6 @@ int main(int argc, char* argv[]) {
 		for (int i = 0; i < thread_count; i++) {
 			char final_fifo[100];
 			sprintf(final_fifo, "%s-%d", myfifo, i);
-			printf("Server pipe created %s\n", final_fifo);
 			fd[i] = open(final_fifo, O_CREAT|O_RDONLY|O_TRUNC, S_IRWXU);
 			if (fd[i] < 0) {
 				printf("Error opening server pipe %d:%s\n", errno, strerror(errno));
@@ -100,7 +100,6 @@ int main(int argc, char* argv[]) {
 		}
 	} else { // Clients are writer
 		fd[0] = open(myfifo, O_WRONLY);
-		printf("Using pipe %s %d\n", myfifo, fd[0]);
 		if (fd[0] < 0) {
 			printf("Error opening client pipe %d:%s\n", errno, strerror(errno));
 			return -1;

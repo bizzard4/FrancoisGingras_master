@@ -92,11 +92,11 @@ def executeIpcTestCase(command, addr_start):
 	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
 		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 		csvwriter.writerow(['test_id', 'test_param', 'test_time'])
-		#i = 0
-		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
-		#	i+=1
-		#	writeRes(i, "TC=" + str(tc), batchtimethis(command, tc, 100, 10), csvwriter)
-		writeRes(100, "TC=" + str(100), batchtimethis(command, 100, 100000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
+		i = 0
+		for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
+			i+=1
+			writeRes(i, "TC=" + str(tc), batchtimethis(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
+		writeRes(i+1, "TC=" + str(THREAD_MAX), batchtimethis(command, THREAD_MAX, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
 
 	# Update count
 	#with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
