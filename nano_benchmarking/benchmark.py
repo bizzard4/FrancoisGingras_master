@@ -150,7 +150,7 @@ def ipcTempTestCase(command, addr_start):
 		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
 		#	i+=1
 		#	writeRes(i, "TC=" + str(tc), multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
-		writeRes(10, "TC=" + str(10), multiProcessTiming(command, 10, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		writeRes(100, "TC=" + str(100), multiProcessTiming(command, 100, 10000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
 
 	# Update count
 	#with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
@@ -201,6 +201,7 @@ def ipc():
 	nano_ipc()
 	pipe_ipc()
 	shared_ipc()
+	dns_ipc()
 	return
 
 def nano_ipc():
@@ -217,6 +218,13 @@ def pipe_ipc():
 	return
 
 def shared_ipc():
+	return
+
+def dns_ipc():
+	print("== dns_ipc starting ==")
+	executeIpcTestCase("dns_ipc", "/tmp/dns_ipc_", False)
+	#ipcTempTestCase("dns_ipc", "/tmp/dns_ipc_")
+	print("== dns_ipc done ==")
 	return
 
 def tcp():
@@ -241,6 +249,7 @@ target ={
 	"nano_ipc": nano_ipc,
 	"pipe_ipc": pipe_ipc,
 	"shared_ipc": shared_ipc,
+	"dns_ipc": dns_ipc,
 	"tcp": tcp,
 	"nano_tcp": nano_tcp,
 	"socket_tcp": socket_tcp

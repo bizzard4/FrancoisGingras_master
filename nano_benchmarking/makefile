@@ -24,7 +24,7 @@ all: inproc ipc tcp
 
 inproc: common nano_inproc java_inproc pthread_inproc
 
-ipc: common nano_ipc pipe_ipc shared_ipc
+ipc: common nano_ipc pipe_ipc shared_ipc dns_ipc
 
 tcp: common nano_tcp socket_tcp
 
@@ -53,6 +53,11 @@ pipe_ipc:
 	$(CC) $(CFLAGS) $(INCLUDES) build/pipe_ipc.o build/list.o -o build/pipe_ipc $(LFLAGS) $(LIBS)
 
 shared_ipc:
+
+dns_ipc:
+	@echo Building dns_ipc
+	$(CC) $(CFLAGS) $(INCLUDES) ipc/dns_ipc/dns_ipc.c -c -o build/dns_ipc.o $(LFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) build/dns_ipc.o build/list.o -o build/dns_ipc $(LFLAGS) $(LIBS)
 
 nano_tcp:
 
