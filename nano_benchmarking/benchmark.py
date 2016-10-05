@@ -124,7 +124,7 @@ def tempTestCase(command, addr_start):
 		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
 		#	i+=1
 		#	writeRes(i, "TC=" + str(tc), multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
-		writeRes(100, "TC=" + str(10), multiProcessTiming(command, 100, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		writeRes(10, "TC=" + str(10), multiProcessTiming(command, 10, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
 
 	# Update count
 	#with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
@@ -178,7 +178,8 @@ def ipc():
 
 def nano_ipc():
 	print("== nano_ipc starting ==")
-	executeIpcTestCase("nano_ipc", "ipc://nano_ipc_", False)
+	#executeIpcTestCase("nano_ipc", "ipc://nano_ipc_", False)
+	tempTestCase("nano_ipc", "ipc://nano_ipc_") # Need to play with usleep in nano_ipc for all test to work
 	print("== nano_ipc done ==")
 	return
 

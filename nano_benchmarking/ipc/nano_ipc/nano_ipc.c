@@ -30,7 +30,7 @@ void send_proc() {
 	for (int i = 0; i < update_count; i++) {
 		int e = nn_send(socket, data, len, 0);
 		//printf("Has send %d\n", i); // THIS SLOW SEND AND MAKE ALL WORK
-		usleep(5000);
+		usleep(10000); // Need to sleep otherwise it will jam
 		if (e <= 0) {
 			printf("Thread sending error %d\n", e);
 		}
