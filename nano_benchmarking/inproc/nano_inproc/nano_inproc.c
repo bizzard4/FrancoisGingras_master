@@ -3,9 +3,10 @@
 #include <string.h>
 #include <time.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "nn.h"
-#include "pair.h"
-#include "pipeline.h"
+#include "reqrep.h"
+#include "inproc.h"
 #include "list.h"
 
 #define SOCKET_ADDRESS "inproc://fr_master1"
@@ -34,6 +35,7 @@ void* send_proc(void* x_void_ptr) {
 	int* socket_id_ptr = (int*)x_void_ptr;
 	for (int i = 0; i < update_count; i++) {
 		int e = nn_send((*socket_id_ptr), data, len, 0);
+		usleep(1000);
 		if (e < 0) {
 			printf("Thread sending error %d\n", e);
 		}
@@ -43,10 +45,10 @@ void* send_proc(void* x_void_ptr) {
 
 // Receiving thread to update list, no lock required because it is message passing
 void* recv_proc(void* x_void_ptr) {
-	char* buf = (char*)malloc(len + 1);
+	char* buf = (char*)malloc(len);
 	int i = 0;
 	while (i<(thread_count*update_count)) {
-		int e = nn_recv(server_socket, buf, len + 1, 0);
+		int e = nn_recv(server_socket, buf, len, 0);
 		if (e < 0) {
 			printf("Thread receiving error %d\n", e);
 		}
@@ -82,14 +84,14 @@ int main(int argc, char* argv[]) {
 	pos = Header(list);
 
 	// Prepare nano socket
-	server_socket = nn_socket(AF_SP, NN_PULL);
+	server_socket = nn_socket(AF_SP, NN_REP);
 	if (server_socket < 0) {
 		printf("Error creating sa socket");
 		return -1;
 	}
 
 	for (int i = 0; i < thread_count; i++) {
-		client_socket[i] = nn_socket(AF_SP, NN_PUSH);
+		client_socket[i] = nn_socket(AF_SP, NN_REQ);
 		if (client_socket[i] < 0) {
 			printf("Error creating sb socket");
 			return -1;
