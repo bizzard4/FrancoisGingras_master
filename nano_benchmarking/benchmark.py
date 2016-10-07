@@ -47,9 +47,9 @@ def singleProcessTiming(command, thread_count, update_count, update_size, is_jav
 
 	# Run the process
 	if (is_java):
-		run(["java", "-cp", "build/", command, str(thread_count), str(update_count), str(update_size)], stdout=DEVNULL)
+		run(["java", "-cp", "build/", command, str(thread_count), str(update_count), str(update_size)])
 	else:
-		run(["build/" + command, str(thread_count), str(update_count), str(update_size)], stdout=DEVNULL)
+		run(["build/" + command, str(thread_count), str(update_count), str(update_size)])
 
 	end = time.time()
 	return int(round((end-start)*1000))
@@ -164,11 +164,11 @@ def ipcTempTestCase(command, addr_start):
 	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
 		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 		initCsv(csvwriter)
-		#i = 0
-		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
-		#	i+=1
-		#	writeRes(i, "TC=" + str(tc), multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S")), csvwriter)
-		writeRes(100, "TC", 100, multiProcessTiming(command, 100, 10000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		i = 0
+		for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
+			i+=1
+			writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		writeRes(100, "TC", 100, multiProcessTiming(command, 100, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
 
 	return
 
@@ -190,8 +190,8 @@ def inproc():
 
 def nano_inproc():
 	print("== nano_inproc starting ==")
-	#executeInprocTestCase("nano_inproc", False)
-	inprocTempTestCase("nano_inproc", False) # Need a variable usleep again
+	executeInprocTestCase("nano_inproc", False)
+	#inprocTempTestCase("nano_inproc", False) # Need a variable usleep again
 	print("== nano_inproc done ==")
 	return
 

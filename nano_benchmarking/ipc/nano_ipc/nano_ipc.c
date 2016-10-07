@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "nn.h"
-#include "reqrep.h"
+#include "pipeline.h"
 #include "ipc.h"
 #include "list.h"
 
@@ -30,7 +30,7 @@ void send_proc() {
 	for (int i = 0; i < update_count; i++) {
 		int e = nn_send(socket, data, len, 0);
 		//printf("Has send %d\n", i); // THIS SLOW SEND AND MAKE ALL WORK
-		usleep(10000); // Need to sleep otherwise it will jam
+		//usleep(1000); // Need to sleep otherwise it will jam
 		if (e <= 0) {
 			printf("Thread sending error %d\n", e);
 		}
@@ -77,13 +77,13 @@ int main(int argc, char* argv[]) {
 
 	// Prepare nano socket
 	if (execution_mode=='s') {
-		socket = nn_socket(AF_SP, NN_REP);
+		socket = nn_socket(AF_SP, NN_PULL);
 		if (socket < 0) {
 			printf("Error creating server socket\n");
 			return -1;
 		}
 	} else {
-		socket = nn_socket(AF_SP, NN_REQ);
+		socket = nn_socket(AF_SP, NN_PUSH);
 		if (socket < 0) {
 			printf("Error creating client socket\n");
 			return -1;

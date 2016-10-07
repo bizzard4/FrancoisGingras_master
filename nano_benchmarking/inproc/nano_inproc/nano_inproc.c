@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "nn.h"
-#include "reqrep.h"
+#include "pipeline.h"
 #include "inproc.h"
 #include "list.h"
 
@@ -35,7 +35,7 @@ void* send_proc(void* x_void_ptr) {
 	int* socket_id_ptr = (int*)x_void_ptr;
 	for (int i = 0; i < update_count; i++) {
 		int e = nn_send((*socket_id_ptr), data, len, 0);
-		usleep(1000);
+		//usleep(1000);
 		if (e < 0) {
 			printf("Thread sending error %d\n", e);
 		}
@@ -84,14 +84,14 @@ int main(int argc, char* argv[]) {
 	pos = Header(list);
 
 	// Prepare nano socket
-	server_socket = nn_socket(AF_SP, NN_REP);
+	server_socket = nn_socket(AF_SP, NN_PULL);
 	if (server_socket < 0) {
 		printf("Error creating sa socket");
 		return -1;
 	}
 
 	for (int i = 0; i < thread_count; i++) {
-		client_socket[i] = nn_socket(AF_SP, NN_REQ);
+		client_socket[i] = nn_socket(AF_SP, NN_PUSH);
 		if (client_socket[i] < 0) {
 			printf("Error creating sb socket");
 			return -1;
