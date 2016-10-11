@@ -93,13 +93,13 @@ int main(int argc, char* argv[]) {
 
 	// Prepare nano socket
 	if (execution_mode=='s') {
-		sc = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+		sc = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (sc < 0) {
 			printf("Error creating server socket\n");
 			return -1;
 		}
 	} else {
-		sc = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+		sc = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (sc < 0) {
 			printf("Error creating client socket\n");
 			return -1;
