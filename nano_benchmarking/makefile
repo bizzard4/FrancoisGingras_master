@@ -60,8 +60,14 @@ dns_ipc:
 	$(CC) $(CFLAGS) $(INCLUDES) build/dns_ipc.o build/list.o -o build/dns_ipc $(LFLAGS) $(LIBS)
 
 nano_tcp:
+	@echo Building nano_tcp
+	$(CC) $(CFLAGS) $(INCLUDES) tcp/nano_tcp/nano_tcp.c -c -o build/nano_tcp.o $(LFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) build/nano_tcp.o build/list.o -o build/nano_tcp $(LFLAGS) $(LIBS)
 
 socket_tcp:
+	@echo Building socket_tcp
+	$(CC) $(CFLAGS) $(INCLUDES) tcp/socket_tcp/socket_tcp.c -c -o build/socket_tcp.o $(LFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) build/socket_tcp.o build/list.o -o build/socket_tcp $(LFLAGS) $(LIBS)
 
 .PHONY: common
 common: 

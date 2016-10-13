@@ -172,6 +172,48 @@ def ipcTempTestCase(command, addr_start):
 
 	return
 
+# Execute a IPC test case
+def executeTcpTestCase(command, addr_start):
+	# First thread count
+	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
+		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		initCsv(csvwriter)
+		i = 0
+		for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
+			i+=1
+			writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start, False), csvwriter)
+		writeRes(i+1, "TC", THREAD_MAX, multiProcessTiming(command, THREAD_MAX, 1000, 10, addr_start, False), csvwriter)
+
+	# Update count
+	with open("output/" + command + "_uc.csv", "w", newline="") as uccsv:
+		csvwriter = csv.writer(uccsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		initCsv(csvwriter)
+		i = 0
+		for uc in range(UPDATE_COUNT_START, UPDATE_COUNT_MAX, UPDATE_COUNT_STEP):
+			i+=1
+			writeRes(i, "UC", uc, multiProcessTiming(command, 4, uc, 10, addr_start, False), csvwriter)
+		writeRes(i+1, "UC", UPDATE_COUNT_MAX, multiProcessTiming(command, 4, UPDATE_COUNT_MAX, 10, addr_start, False), csvwriter)
+
+	# Update size TODO
+	return
+
+
+# TCP temp test case for dev
+def tcpTempTestCase(command, addr_start):
+	# First thread count
+	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
+		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+		initCsv(csvwriter)
+		i = 0
+		for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
+			i+=1
+			writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start, False), csvwriter)
+		writeRes(100, "TC", 100, multiProcessTiming(command, 100, 1000, 10, addr_start, False), csvwriter)
+
+	return
+
+
+
 ##############################################
 ############ BENCHMARKING TARGETS ############
 ##############################################
@@ -243,9 +285,17 @@ def tcp():
 	return
 
 def nano_tcp():
+	print("== nano_tcp starting ==")
+	executeTcpTestCase("nano_tcp", "tcp://127.0.0.1:6060")
+	#tcpTempTestCase("nano_tcp", "tcp://127.0.0.1:6060") # Need to play with usleep in nano_ipc for all test to work
+	print("== nano_tcp done ==")
 	return
 
 def socket_tcp():
+	print("== socket_tcp starting ==")
+	executeTcpTestCase("socket_tcp", "tcp://127.0.0.1")
+	#tcpTempTestCase("socket_tcp", "127.0.0.1")
+	print("== socket_tcp done ==")
 	return
 
 # Function dictionary
