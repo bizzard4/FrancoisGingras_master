@@ -251,7 +251,7 @@ def pthread_inproc():
 
 def ipc():
 	nano_ipc()
-	pipe_ipc()
+	#pipe_ipc()
 	shared_ipc()
 	dns_ipc()
 	return
