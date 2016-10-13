@@ -258,12 +258,12 @@ def ipc():
 
 def nano_ipc():
 	print("== nano_ipc starting ==")
-	#executeIpcTestCase("nano_ipc", "ipc://nano_ipc_", False)
-	ipcTempTestCase("nano_ipc", "ipc:///tmp/nano_ipc_") # Need to play with usleep in nano_ipc for all test to work
+	executeIpcTestCase("nano_ipc", "ipc://nano_ipc_", False)
+	#ipcTempTestCase("nano_ipc", "ipc:///tmp/nano_ipc_") # Need to play with usleep in nano_ipc for all test to work
 	print("== nano_ipc done ==")
 	return
 
-def pipe_ipc():
+def pipe_ipc(): # Not suited for n-1
 	print("== pipe_ipc starting ==")
 	executeIpcTestCase("pipe_ipc", "/tmp/pipe_ipc_", True)
 	print("== pipe_ipc done ==")
@@ -287,14 +287,12 @@ def tcp():
 def nano_tcp():
 	print("== nano_tcp starting ==")
 	executeTcpTestCase("nano_tcp", "tcp://127.0.0.1:6060")
-	#tcpTempTestCase("nano_tcp", "tcp://127.0.0.1:6060") # Need to play with usleep in nano_ipc for all test to work
 	print("== nano_tcp done ==")
 	return
 
 def socket_tcp():
 	print("== socket_tcp starting ==")
 	executeTcpTestCase("socket_tcp", "tcp://127.0.0.1")
-	#tcpTempTestCase("socket_tcp", "127.0.0.1")
 	print("== socket_tcp done ==")
 	return
 

@@ -29,8 +29,9 @@ char execution_mode;
 void send_proc() {
 	for (int i = 0; i < update_count; i++) {
 		int e = nn_send(socket, data, len, 0);
-		//printf("Has send %d\n", i); // THIS SLOW SEND AND MAKE ALL WORK
-		//usleep(1000); // Need to sleep otherwise it will jam
+		while (errno == EWOULDBLOCK) {
+			e = nn_send(socket, data, len, 0);
+		}
 		if (e <= 0) {
 			printf("Thread sending error %d\n", e);
 		}
