@@ -258,7 +258,7 @@ def ipc():
 
 def nano_ipc():
 	print("== nano_ipc starting ==")
-	executeIpcTestCase("nano_ipc", "ipc://nano_ipc_", False)
+	executeIpcTestCase("nano_ipc", "ipc:///tmp/nano_ipc_", False)
 	#ipcTempTestCase("nano_ipc", "ipc:///tmp/nano_ipc_") # Need to play with usleep in nano_ipc for all test to work
 	print("== nano_ipc done ==")
 	return
