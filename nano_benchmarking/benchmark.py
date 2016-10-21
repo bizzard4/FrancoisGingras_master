@@ -174,7 +174,7 @@ def ipcTempTestCase(command, addr_start):
 		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
 			#i+=1
 			#writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
-		writeRes(10, "TC", 100, multiProcessTiming(command, 10, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		writeRes(1, "TC", 100, multiProcessTiming(command, 1, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
 
 	return
 
@@ -210,11 +210,11 @@ def tcpTempTestCase(command, addr_start):
 	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
 		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 		initCsv(csvwriter)
-		i = 0
-		for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
-			i+=1
-			writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start, False), csvwriter)
-		writeRes(100, "TC", 100, multiProcessTiming(command, 100, 1000, 10, addr_start, False), csvwriter)
+		#i = 0
+		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
+		#	i+=1
+		#	writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start, False), csvwriter)
+		writeRes(100, "TC", 1, multiProcessTiming(command, 100, 100, 10, addr_start, False), csvwriter)
 
 	return
 
@@ -292,6 +292,7 @@ def tcp():
 
 def nano_tcp():
 	print("== nano_tcp starting ==")
+	#tcpTempTestCase("nano_tcp", "tcp://127.0.0.1:6060")
 	executeTcpTestCase("nano_tcp", "tcp://127.0.0.1:6060")
 	print("== nano_tcp done ==")
 	return

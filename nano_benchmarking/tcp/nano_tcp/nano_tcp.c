@@ -29,50 +29,51 @@ char execution_mode;
 void send_proc() {
 	int i = 0;
 	while (i < update_count) {
-		errno=0;
 		int bsend = nn_send(socket, data, len, 0);
 
-		if (nn_errno() == EAGAIN) { // Weird, happen more if I have more process
-			if (bsend == len) {
-				printf("EAGAIN with bsend==len\n");
-			} else {
-				printf("EAGAIN with bsend != len\n");
-			}
-			continue;
-		}
-
 		if (bsend < 0) {
-			printf("Thread sending error %d\n", errno);
-		}
-
-		if (bsend == len) {
+			if (errno == EAGAIN) {
+				printf("Cant send now, retrying\n");
+				continue;
+			} else {
+				printf("Error : %d\n", errno);
+				break;
+			}
+		} else if (bsend == 0) {
+			printf("Connection lost\n");
+			break;
+		} else { // bsend > 0
 			i++;
-		} else {
-			printf("bad");
 		}
 	}
 }
 
 // Receiving thread to update list, no lock required because it is message passing
 void recv_proc() {
-	char* buf = (char*)malloc(len);
 	int i = 0;
 	while (i<(thread_count*update_count)) {
-		//printf("Starting receibing\n");
-		int e = nn_recv(socket, buf, len, 0);
-		int error = nn_errno();
-		if (e <= 0) {
-			printf("Thread receiving error %d\n", error);
-		}
-		//printf("Thread received %d\n", i);
-		//sched_yield();
-		// Insert into linked list
-		Insert(update_size, list, pos);
-		pos = Advance(pos);
+		char* buf = (char*)malloc(len);
+		int brecv = nn_recv(socket, buf, len, 0);
 
-		i++;
+		if (brecv < 0) {
+			if (errno == EAGAIN) {
+				printf("Data not ready, waiting\n");
+				continue;
+			} else {
+				printf("Error : %d\n", errno);
+				break;
+			}
+		} else if (brecv == 0) {
+			printf("Connection lost\n");
+			break;
+		} else { // brecv > 0
+			//printf("Data #%d = %s\n", i, buf);
+			Insert(update_size, list, pos);
+			pos = Advance(pos);
+			i++;
+		}
+		free(buf);
 	}
-	free(buf);
 }
 
 int main(int argc, char* argv[]) {
