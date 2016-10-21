@@ -27,30 +27,46 @@ char execution_mode;
 
 // Thread that send message to add to list
 void send_proc() {
-	for (int i = 0; i < update_count; i++) {
-		int e = nn_send(socket, data, len, 0);
-		while (errno == EWOULDBLOCK) {
-			e = nn_send(socket, data, len, 0);
+	int i = 0;
+	while (i < update_count) {
+		errno=0;
+		int bsend = nn_send(socket, data, len, 0);
+
+		if (nn_errno() == EAGAIN) { // Weird, happen more if I have more process
+			if (bsend == len) {
+				printf("EAGAIN with bsend==len\n"); // This one happen when, I belive, the buffer is full. On TCP this work properly.
+			} else {
+				printf("EAGAIN with bsend != len\n");
+			}
+			continue;
 		}
-		if (e <= 0) {
-			printf("Thread sending error %d\n", e);
+
+		if (bsend < 0) {
+			printf("Thread sending error %d\n", errno);
+		}
+
+		if (bsend == len) {
+			i++;
+		} else {
+			printf("bad");
 		}
 	}
+	printf("Done sending\n");
 }
 
 // Receiving thread to update list, no lock required because it is message passing
 void recv_proc() {
-	char* buf = (char*)malloc(len);
 	int i = 0;
+	char* buf = malloc(100*sizeof(char));
 	while (i<(thread_count*update_count)) {
-		//printf("Starting receibing\n");
-		int e = nn_recv(socket, buf, len, 0);
-		int error = nn_errno();
-		if (e <= 0) {
-			printf("Thread receiving error %d\n", error);
+		//printf("Recv started\n");
+		int brecv = nn_recv(socket, buf, 100, 0);
+		//printf("Recv %d of %d bytes\n", i, brecv);
+
+		if (brecv < 0) {
+			printf("Thread receiving error %d\n", nn_errno());
 		}
-		//printf("Thread received %d\n", i);
-		//sched_yield();
+
 		// Insert into linked list
 		Insert(update_size, list, pos);
 		pos = Advance(pos);
@@ -58,6 +74,7 @@ void recv_proc() {
 		i++;
 	}
 	free(buf);
+	printf("Server done\n");
 }
 
 int main(int argc, char* argv[]) {
@@ -114,6 +131,7 @@ int main(int argc, char* argv[]) {
 	if (execution_mode=='s') {
 		recv_proc();
 	} else {
+		usleep(100000);
 		send_proc();
 	}
 

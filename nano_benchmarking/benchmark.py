@@ -62,13 +62,19 @@ def multiProcessTiming(command, thread_count, update_count, update_size, addr, a
 	svr_proc = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 's', addr])
 
 	# Start all client one by one
+	client_proc = [None]*thread_count
 	for i in range(0, thread_count):
 		final_addr = addr;
 		if (add_thread_id):
 			final_addr = final_addr + "-" + str(i)
-		t = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 'c', final_addr])
+		client_proc[i] = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 'c', final_addr])
 
-	print("Waiting on server thread to finish")
+	print("Waiting on clients process to finish")
+
+	for i in range(0, thread_count):
+		client_proc[i].wait()
+
+	print("Waiting on server process to finish")
 
 	svr_proc.wait()
 
@@ -164,11 +170,11 @@ def ipcTempTestCase(command, addr_start):
 	with open("output/" + command + "_th.csv", "w", newline="") as thcsv:
 		csvwriter = csv.writer(thcsv, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 		initCsv(csvwriter)
-		i = 0
-		for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
-			i+=1
-			writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
-		writeRes(100, "TC", 100, multiProcessTiming(command, 100, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		#i = 0
+		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
+			#i+=1
+			#writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		writeRes(10, "TC", 100, multiProcessTiming(command, 10, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
 
 	return
 
@@ -232,8 +238,8 @@ def inproc():
 
 def nano_inproc():
 	print("== nano_inproc starting ==")
-	executeInprocTestCase("nano_inproc", False)
-	#inprocTempTestCase("nano_inproc", False) # Need a variable usleep again
+	#executeInprocTestCase("nano_inproc", False)
+	inprocTempTestCase("nano_inproc", False) # Need a variable usleep again
 	print("== nano_inproc done ==")
 	return
 
@@ -258,8 +264,8 @@ def ipc():
 
 def nano_ipc():
 	print("== nano_ipc starting ==")
-	executeIpcTestCase("nano_ipc", "ipc:///tmp/nano_ipc_", False)
-	#ipcTempTestCase("nano_ipc", "ipc:///tmp/nano_ipc_") # Need to play with usleep in nano_ipc for all test to work
+	#executeIpcTestCase("nano_ipc", "ipc:///tmp/nano_ipc_", False)
+	ipcTempTestCase("nano_ipc", "ipc:///tmp/nano_ipc_") # Need to play with usleep in nano_ipc for all test to work
 	print("== nano_ipc done ==")
 	return
 

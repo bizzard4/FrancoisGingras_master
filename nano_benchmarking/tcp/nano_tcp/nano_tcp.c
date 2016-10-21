@@ -27,13 +27,28 @@ char execution_mode;
 
 // Thread that send message to add to list
 void send_proc() {
-	for (int i = 0; i < update_count; i++) {
-		int e = nn_send(socket, data, len, 0);
-		while (errno == EWOULDBLOCK) {
-			e = nn_send(socket, data, len, 0);
+	int i = 0;
+	while (i < update_count) {
+		errno=0;
+		int bsend = nn_send(socket, data, len, 0);
+
+		if (nn_errno() == EAGAIN) { // Weird, happen more if I have more process
+			if (bsend == len) {
+				printf("EAGAIN with bsend==len\n");
+			} else {
+				printf("EAGAIN with bsend != len\n");
+			}
+			continue;
 		}
-		if (e <= 0) {
-			printf("Thread sending error %d\n", e);
+
+		if (bsend < 0) {
+			printf("Thread sending error %d\n", errno);
+		}
+
+		if (bsend == len) {
+			i++;
+		} else {
+			printf("bad");
 		}
 	}
 }
