@@ -68,7 +68,7 @@ void recv_proc() {
 			printf("Connection lost\n");
 			break;
 		} else { // brecv > 0
-			printf("Data #%d = %s\n", i, buf);
+			//printf("Data #%d = %s\n", i, buf);
 			Insert(update_size, list, pos);
 			pos = Advance(pos);
 			i++;
@@ -131,10 +131,11 @@ int main(int argc, char* argv[]) {
 	if (execution_mode=='s') {
 		recv_proc();
 	} else {
-		usleep(100000);
 		send_proc();
 	}
 
+	//sleep(1);
+	usleep(100000);
 	nn_shutdown(socket, eid);
 
 	return 0;

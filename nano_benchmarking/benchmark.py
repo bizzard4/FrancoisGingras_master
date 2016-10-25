@@ -174,7 +174,7 @@ def ipcTempTestCase(command, addr_start):
 		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
 			#i+=1
 			#writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
-		writeRes(1, "TC", 100, multiProcessTiming(command, 1, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		writeRes(100, "TC", 100, multiProcessTiming(command, 100, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
 
 	return
 
@@ -264,8 +264,8 @@ def ipc():
 
 def nano_ipc():
 	print("== nano_ipc starting ==")
-	#executeIpcTestCase("nano_ipc", "ipc:///tmp/nano_ipc_", False)
-	ipcTempTestCase("nano_ipc", "ipc:///tmp/nano_ipc_") # Need to play with usleep in nano_ipc for all test to work
+	executeIpcTestCase("nano_ipc", "ipc:///tmp/nano_ipc_", False)
+	#ipcTempTestCase("nano_ipc", "ipc:///tmp/nano_ipc_") # Need to play with usleep in nano_ipc for all test to work
 	print("== nano_ipc done ==")
 	return
 
