@@ -238,8 +238,8 @@ def inproc():
 
 def nano_inproc():
 	print("== nano_inproc starting ==")
-	#executeInprocTestCase("nano_inproc", False)
-	inprocTempTestCase("nano_inproc", False) # Need a variable usleep again
+	executeInprocTestCase("nano_inproc", False)
+	#inprocTempTestCase("nano_inproc", False) # Need a variable usleep again
 	print("== nano_inproc done ==")
 	return
 
