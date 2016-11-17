@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	//sleep(1);
-	usleep(100000);
+	usleep(200000);
 	nn_shutdown(socket, eid);
 
 	return 0;

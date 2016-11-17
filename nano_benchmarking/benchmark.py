@@ -56,10 +56,13 @@ def singleProcessTiming(command, thread_count, update_count, update_size, is_jav
 
 # Timing function for a multi-process
 def multiProcessTiming(command, thread_count, update_count, update_size, addr, add_thread_id):
-	start = time.time()
+	
 
 	# Start server
 	svr_proc = Popen(["build/" + command, str(thread_count), str(update_count), str(update_size), 's', addr])
+
+	time.sleep(0.1)
+	start = time.time()
 
 	# Start all client one by one
 	client_proc = [None]*thread_count

@@ -143,5 +143,6 @@ int main(int argc, char* argv[]) {
 		send_proc();
 	}
 
+	usleep(200000);
 	return 0;
 }
