@@ -53,6 +53,9 @@ pipe_ipc:
 	$(CC) $(CFLAGS) $(INCLUDES) build/pipe_ipc.o build/list.o -o build/pipe_ipc $(LFLAGS) $(LIBS)
 
 shared_ipc:
+	@echo Building shared_ipc
+	$(CC) $(CFLAGS) $(INCLUDES) ipc/shared_ipc/shared_ipc.c -c -o build/shared_ipc.o $(LFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(INCLUDES) build/shared_ipc.o build/list.o -o build/shared_ipc $(LFLAGS) $(LIBS)
 
 dns_ipc:
 	@echo Building dns_ipc

@@ -279,6 +279,10 @@ def pipe_ipc(): # Not suited for n-1
 	return
 
 def shared_ipc():
+	print("== shared_ipc starting ==")
+	executeIpcTestCase("shared_ipc", "/tmp/shared_ipc_", False)
+	#ipcTempTestCase("shared_ipc", "/tmp/shared_ipc_")
+	print("== dns_ipc done ==")
 	return
 
 def dns_ipc():

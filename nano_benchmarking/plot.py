@@ -22,7 +22,7 @@ def plotResult(file, sign, legend):
 	plt.plot(data.test_param_value.tolist(), data.test_time.tolist(), sign, label=legend)
 	return
 
-tech_list = {"inproc" : ["nano_inproc", "pthread_inproc", "java_inproc"], "ipc" : ["nano_ipc", "dns_ipc"], "tcp" : ["nano_tcp", "socket_tcp"]}
+tech_list = {"inproc" : ["nano_inproc", "pthread_inproc", "java_inproc"], "ipc" : ["nano_ipc", "dns_ipc", "shared_ipc"], "tcp" : ["nano_tcp", "socket_tcp"]}
 xlabel_list = {"th" : "Thread count", "uc" : "Update count", "us" : "Update size"}
 sign_list = [".r", ".b", ".g"] # At most, 3 sign on the plot in the same time
 

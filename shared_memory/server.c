@@ -6,7 +6,7 @@
 #include <sys/shm.h>
 #include <semaphore.h>
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 10
 
 int main() {
 	int shmid; // Shared memory id
@@ -69,13 +69,14 @@ int main() {
 	}
 
 	// Consume 100 times
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 10000; i++) {
 		sem_wait(sem_full_addr);
 
 		sem_wait(sem_mutex_addr);
 		int item = buffer[*out];
 		*out = ((*out) + 1)%BUFFER_SIZE;
 		*count = (*count) - 1;
+		printf("I=%d In=%d Out=%d Count=%d\n", i, *in, *out, *count);
 		sem_post(sem_mutex_addr);
 
 		sem_post(sem_empty_addr);

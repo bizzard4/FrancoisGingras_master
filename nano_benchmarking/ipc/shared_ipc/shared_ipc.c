@@ -1,22 +1,27 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <stdlib.h>
 #include <errno.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <semaphore.h>
 #include "list.h"
 
 // Global linked list
 List list;
 Position pos;
 
-// Global socket id
-int sc;
-int* clients;
+// Shared data
+sem_t* sem_empty_addr; // Init to buffer size
+sem_t* sem_full_addr; // Init to 0
+sem_t* sem_mutex_addr;
+int* in;
+int* out;
+int* count;
+int* buffer;
 
-// Global communication variables
-int len;
-char* data;
+int shmid; // Shared memory id
+#define BUFFER_SIZE 50
 
 // Parameters
 int thread_count;
@@ -24,57 +29,48 @@ int update_count;
 int update_size;
 char execution_mode;
 
-char *socket_path = "\0hidden";
-
-
 // Thread that send message to add to list
 void send_proc() {
 	for (int i = 0; i < update_count; i++) {
-		int e = write(sc, data, len);
-		//printf("Has send %d\n", i); // THIS SLOW SEND AND MAKE ALL WORK
-		//usleep(10000); // Need to sleep otherwise it will jam
-		if (e <= 0) {
-			printf("Thread sending error %d\n", e);
-		}
+		int item = i;
+
+		sem_wait(sem_empty_addr);
+
+		sem_wait(sem_mutex_addr);
+		buffer[*in] = item;
+		*in = ((*in) + 1)%BUFFER_SIZE;
+		*count = (*count) + 1;
+		sem_post(sem_mutex_addr);
+
+		sem_post(sem_full_addr);
 	}
 }
 
 // Receiving thread to update list, no lock required because it is message passing
 void recv_proc() {
-	// First we wait for all connection
-	for (int i = 0; i < thread_count; i++) {
-		clients[i] = accept(sc, NULL, NULL);
-		if (clients[i] < 0) {
-			printf("Error accepting connexion\n");
-			return;
-		}
+	for (int i = 0; i < (update_count*thread_count); i++) {
+		sem_wait(sem_full_addr);
+
+		sem_wait(sem_mutex_addr);
+		int item = buffer[*out];
+		*out = ((*out) + 1)%BUFFER_SIZE;
+		*count = (*count) - 1;
+		sem_post(sem_mutex_addr);
+
+		sem_post(sem_empty_addr);
+
+		// Consume
+		Insert(update_size, list, pos);
+		pos = Advance(pos);
 	}
 
-	char* buf = (char*)malloc(len);
-	int i = 0;
-	while (i<(thread_count*update_count)) {
-		for (int t = 0; t < thread_count; t++) {
-			int e = read(clients[t], buf, len);
-			if (e <= 0) {
-				printf("Thread receiving error\n");
-			}
-			//printf("Thread received %d\n", i);
-			//sched_yield();
-			// Insert into linked list
-
-			if (e > 0) {
-				Insert(update_size, list, pos);
-				pos = Advance(pos);
-
-				i++;
-			}
-		}
-	}
-	free(buf);
+	// Detach and remove shared memory space
+	shmctl(shmid, IPC_RMID, NULL);
 }
 
 int main(int argc, char* argv[]) {
-	struct sockaddr_un addr;
+	key_t key = 0x1020304; // Shared memory key, if already exist it will return error
+	void* addr; // Semaphore address start
 
 	// argv
 	thread_count = atoi(argv[1]);
@@ -93,52 +89,56 @@ int main(int argc, char* argv[]) {
 
 	// Prepare nano socket
 	if (execution_mode=='s') {
-		sc = socket(AF_UNIX, SOCK_STREAM, 0);
-		if (sc < 0) {
-			printf("Error creating server socket\n");
+		shmid = shmget(key, 3*sizeof(sem_t)+(BUFFER_SIZE+3)*sizeof(int), IPC_CREAT | 0666);
+		if (shmid < 0) {
+			printf("Error creating server segment \n");
 			return -1;
 		}
 	} else {
-		sc = socket(AF_UNIX, SOCK_STREAM, 0);
-		if (sc < 0) {
-			printf("Error creating client socket\n");
+		shmid = shmget(key, 3*sizeof(sem_t)+(BUFFER_SIZE+3)*sizeof(int), 0);
+		if (shmid < 0) {
+			printf("Error creating client segment \n");
 			return -1;
 		}
 	}
 
-	// Prepare address
-	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, argv[5], sizeof(addr.sun_path)-1);
-
-	// Connect them to the inproc addr
-	int eid = 0;
-	if (execution_mode=='s') {
-		eid = bind(sc, (struct sockaddr*)&addr, sizeof(addr));
-		if (eid < 0) {
-			printf("Error on binding %s\n", strerror(errno));
-			return -1;
-		}
-	} else {
-		eid = connect(sc, (struct sockaddr*)&addr, sizeof(addr));
-		if (eid < 0) {
-			printf("Error on connect %s\n", strerror(errno));
-			return -1;
-		}
+	// Attach
+	addr = shmat(shmid, NULL, 0);
+	if ((int)addr == -1) {
+		printf("Error in shmat %d\n", errno);
+		return -1;
 	}
 
-	data = "data";
-	len = strlen(data);
+	sem_empty_addr = (sem_t*)addr;
+	sem_full_addr = (sem_t*)addr+sizeof(sem_t);
+	sem_mutex_addr = (sem_t*)addr+2*sizeof(sem_t);
+	in = (int*)addr+3*sizeof(sem_t);
+	out = (int*)addr+3*sizeof(sem_t)+sizeof(int);
+	count = (int*)addr+3*sizeof(sem_t)+2*sizeof(int);
+	buffer = (int*)addr+3*sizeof(sem_t)+3*sizeof(int);
 
 	// Do work
 	if (execution_mode=='s') {
-		clients = malloc(thread_count*sizeof(int));
-		if (listen(sc, thread_count) < 0) {
-			printf("Listen error\n");
+		// Initialize values
+		if (sem_init(sem_empty_addr, 1, BUFFER_SIZE) == -1) {
+			printf("Error in sem_empty_addr %d\n", errno);
 			return -1;
 		}
+		if (sem_init(sem_full_addr, 1, 0) == -1) {
+			printf("Error in sem_empty_addr %d\n", errno);
+			return -1;
+		}
+		if (sem_init(sem_mutex_addr, 1, 1) == -1) {
+			printf("Error in sem_empty_addr %d\n", errno);
+			return -1;
+		}
+		*in = 0;
+		*out = 0;
+		*count = 0;
+		for (int i = 0; i < BUFFER_SIZE; i++) {
+			buffer[i] = 0;
+		}
 		recv_proc();
-		unlink(argv[5]);
 	} else {
 		send_proc();
 	}

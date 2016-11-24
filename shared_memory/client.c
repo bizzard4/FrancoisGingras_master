@@ -6,7 +6,7 @@
 #include <sys/shm.h>
 #include <semaphore.h>
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 10
 
 int main() {
 	int shmid; // Shared memory id
@@ -49,8 +49,8 @@ int main() {
 	printf("Count addr = %p\n", count);
 
 	// Produce 100 times
-	for (int i = 0; i < 100; i++) {
-		int item = 50;
+	for (int i = 0; i < 5000; i++) {
+		int item = i;
 
 		sem_wait(sem_empty_addr);
 
@@ -58,15 +58,13 @@ int main() {
 		buffer[*in] = item;
 		*in = ((*in) + 1)%BUFFER_SIZE;
 		*count = (*count) + 1;
+		printf("I=%d In=%d Out=%d Count=%d\n", i, *in, *out, *count);
 		sem_post(sem_mutex_addr);
 
 		sem_post(sem_full_addr);
 
 		printf("Produced %d\n", item);
 	}
-
-	// Detach and remove shared memory space
-	shmctl(shmid, IPC_RMID, NULL);
 
 	return 0;
 }
