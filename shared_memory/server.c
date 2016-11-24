@@ -6,23 +6,35 @@
 #include <sys/shm.h>
 #include <semaphore.h>
 
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 10000
+
+typedef struct prod_cons_shared {
+	sem_t sem_empty_addr;
+	sem_t sem_full_addr;
+	sem_t sem_mutex_addr;
+	int in;
+	int out;
+	int count;
+	int buffer[BUFFER_SIZE];
+};
 
 int main() {
 	int shmid; // Shared memory id
-	key_t key = 0x1020304; // Shared memory key, if already exist it will return error
-	void* addr; // Semaphore address start
+	key_t key = ftok("/home/tmp/test_shared", 'b');
+	void* addr; // Shared memory address start
+	struct prod_cons_shared* shared_stuff;
 
-	sem_t* sem_empty_addr; // Init to buffer size
-	sem_t* sem_full_addr; // Init to 0
-	sem_t* sem_mutex_addr;
-	int* in;
-	int* out;
-	int* count;
-	int* buffer;
+	//sem_t* sem_empty_addr; // Init to buffer size
+	//sem_t* sem_full_addr; // Init to 0
+	//sem_t* sem_mutex_addr;
+	//int* in;
+	//int* out;
+	//int* count;
+	//int* buffer;
 
 	// Key, size, flags
-	shmid = shmget(key, 3*sizeof(sem_t)+(BUFFER_SIZE+3)*sizeof(int), IPC_CREAT | 0666);
+	int size = sizeof(struct prod_cons_shared);
+	shmid = shmget(key, size, IPC_CREAT | 0666);
 	if (shmid < 0) {
 		printf("Error creating segment \n");
 		return -1;
@@ -36,50 +48,53 @@ int main() {
 	}
 
 	printf("Got %p\n", addr);
-	sem_empty_addr = (sem_t*)addr;
-	sem_full_addr = (sem_t*)addr+sizeof(sem_t);
-	sem_mutex_addr = (sem_t*)addr+2*sizeof(sem_t);
-	in = (int*)addr+3*sizeof(sem_t);
-	out = (int*)addr+3*sizeof(sem_t)+sizeof(int);
-	count = (int*)addr+3*sizeof(sem_t)+2*sizeof(int);
-	buffer = (int*)addr+3*sizeof(sem_t)+3*sizeof(int);
+	shared_stuff = (struct prod_cons_shared*)addr;
+	//sem_empty_addr = (sem_t*)addr;
+	//sem_full_addr = (sem_t*)addr+sizeof(sem_t);
+	//sem_mutex_addr = (sem_t*)addr+2*sizeof(sem_t);
+	//in = (int*)addr+3*sizeof(sem_t);
+	//out = (int*)addr+3*sizeof(sem_t)+sizeof(int);
+	//count = (int*)addr+3*sizeof(sem_t)+2*sizeof(int);
+	//buffer = (int*)addr+3*sizeof(sem_t)+3*sizeof(int);
 
-	printf("In addr = %p\n", in);
-	printf("Out addr = %p\n", out);
-	printf("Count addr = %p\n", count);
+	//printf("In addr = %p\n", in);
+	//printf("Out addr = %p\n", out);
+	//printf("Count addr = %p\n", count);
 
 	// Initialize values
-	if (sem_init(sem_empty_addr, 1, BUFFER_SIZE) == -1) {
+	if (sem_init(&shared_stuff->sem_empty_addr, 1, BUFFER_SIZE) == -1) {
 		printf("Error in sem_empty_addr %d\n", errno);
 		return -1;
 	}
-	if (sem_init(sem_full_addr, 1, 0) == -1) {
+	if (sem_init(&shared_stuff->sem_full_addr, 1, 0) == -1) {
 		printf("Error in sem_empty_addr %d\n", errno);
 		return -1;
 	}
-	if (sem_init(sem_mutex_addr, 1, 1) == -1) {
+	if (sem_init(&shared_stuff->sem_mutex_addr, 1, 1) == -1) {
 		printf("Error in sem_empty_addr %d\n", errno);
 		return -1;
 	}
-	*in = 0;
-	*out = 0;
-	*count = 0;
+	shared_stuff->in = 0;
+	shared_stuff->out = 0;
+	shared_stuff->count = 0;
 	for (int i = 0; i < BUFFER_SIZE; i++) {
-		buffer[i] = 0;
+		shared_stuff->buffer[i] = 0;
 	}
+
+	printf("Start to consume\n");
 
 	// Consume 100 times
-	for (int i = 0; i < 10000; i++) {
-		sem_wait(sem_full_addr);
+	for (int i = 0; i < 100000; i++) {
+		sem_wait(&shared_stuff->sem_full_addr);
 
-		sem_wait(sem_mutex_addr);
-		int item = buffer[*out];
-		*out = ((*out) + 1)%BUFFER_SIZE;
-		*count = (*count) - 1;
-		printf("I=%d In=%d Out=%d Count=%d\n", i, *in, *out, *count);
-		sem_post(sem_mutex_addr);
+		sem_wait(&shared_stuff->sem_mutex_addr);
+		int item = shared_stuff->buffer[shared_stuff->out];
+		shared_stuff->out = ((shared_stuff->out) + 1)%BUFFER_SIZE;
+		shared_stuff->count = (shared_stuff->count) - 1;
+		printf("I=%d In=%d Out=%d Count=%d\n", i, shared_stuff->in, shared_stuff->out, shared_stuff->count);
+		sem_post(&shared_stuff->sem_mutex_addr);
 
-		sem_post(sem_empty_addr);
+		sem_post(&shared_stuff->sem_empty_addr);
 
 		printf("Consumed %d\n", item);
 	}

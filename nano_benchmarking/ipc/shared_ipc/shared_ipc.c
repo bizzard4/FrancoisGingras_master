@@ -11,17 +11,18 @@
 List list;
 Position pos;
 
-// Shared data
-sem_t* sem_empty_addr; // Init to buffer size
-sem_t* sem_full_addr; // Init to 0
-sem_t* sem_mutex_addr;
-int* in;
-int* out;
-int* count;
-int* buffer;
-
 int shmid; // Shared memory id
-#define BUFFER_SIZE 50
+#define BUFFER_SIZE 10000
+typedef struct prod_cons_shared {
+	sem_t sem_empty_addr;
+	sem_t sem_full_addr;
+	sem_t sem_mutex_addr;
+	int in;
+	int out;
+	int count;
+	int buffer[BUFFER_SIZE];
+};
+struct prod_cons_shared* shared_stuff;
 
 // Parameters
 int thread_count;
@@ -34,30 +35,30 @@ void send_proc() {
 	for (int i = 0; i < update_count; i++) {
 		int item = i;
 
-		sem_wait(sem_empty_addr);
+		sem_wait(&shared_stuff->sem_empty_addr);
 
-		sem_wait(sem_mutex_addr);
-		buffer[*in] = item;
-		*in = ((*in) + 1)%BUFFER_SIZE;
-		*count = (*count) + 1;
-		sem_post(sem_mutex_addr);
+		sem_wait(&shared_stuff->sem_mutex_addr);
+		shared_stuff->buffer[shared_stuff->in] = item;
+		shared_stuff->in = ((shared_stuff->in) + 1)%BUFFER_SIZE;
+		shared_stuff->count = (shared_stuff->count) + 1;
+		sem_post(&shared_stuff->sem_mutex_addr);
 
-		sem_post(sem_full_addr);
+		sem_post(&shared_stuff->sem_full_addr);
 	}
 }
 
 // Receiving thread to update list, no lock required because it is message passing
 void recv_proc() {
 	for (int i = 0; i < (update_count*thread_count); i++) {
-		sem_wait(sem_full_addr);
+		sem_wait(&shared_stuff->sem_full_addr);
 
-		sem_wait(sem_mutex_addr);
-		int item = buffer[*out];
-		*out = ((*out) + 1)%BUFFER_SIZE;
-		*count = (*count) - 1;
-		sem_post(sem_mutex_addr);
+		sem_wait(&shared_stuff->sem_mutex_addr);
+		int item = shared_stuff->buffer[shared_stuff->out];
+		shared_stuff->out = ((shared_stuff->out) + 1)%BUFFER_SIZE;
+		shared_stuff->count = (shared_stuff->count) - 1;
+		sem_post(&shared_stuff->sem_mutex_addr);
 
-		sem_post(sem_empty_addr);
+		sem_post(&shared_stuff->sem_empty_addr);
 
 		// Consume
 		Insert(update_size, list, pos);
@@ -89,13 +90,13 @@ int main(int argc, char* argv[]) {
 
 	// Prepare nano socket
 	if (execution_mode=='s') {
-		shmid = shmget(key, 3*sizeof(sem_t)+(BUFFER_SIZE+3)*sizeof(int), IPC_CREAT | 0666);
+		shmid = shmget(key, sizeof(struct prod_cons_shared), IPC_CREAT | 0666);
 		if (shmid < 0) {
 			printf("Error creating server segment \n");
 			return -1;
 		}
 	} else {
-		shmid = shmget(key, 3*sizeof(sem_t)+(BUFFER_SIZE+3)*sizeof(int), 0);
+		shmid = shmget(key, sizeof(struct prod_cons_shared), 0);
 		if (shmid < 0) {
 			printf("Error creating client segment \n");
 			return -1;
@@ -109,34 +110,28 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	sem_empty_addr = (sem_t*)addr;
-	sem_full_addr = (sem_t*)addr+sizeof(sem_t);
-	sem_mutex_addr = (sem_t*)addr+2*sizeof(sem_t);
-	in = (int*)addr+3*sizeof(sem_t);
-	out = (int*)addr+3*sizeof(sem_t)+sizeof(int);
-	count = (int*)addr+3*sizeof(sem_t)+2*sizeof(int);
-	buffer = (int*)addr+3*sizeof(sem_t)+3*sizeof(int);
+	shared_stuff = (struct prod_cons_shared*)addr;
 
 	// Do work
 	if (execution_mode=='s') {
 		// Initialize values
-		if (sem_init(sem_empty_addr, 1, BUFFER_SIZE) == -1) {
+		if (sem_init(&shared_stuff->sem_empty_addr, 1, BUFFER_SIZE) == -1) {
 			printf("Error in sem_empty_addr %d\n", errno);
 			return -1;
 		}
-		if (sem_init(sem_full_addr, 1, 0) == -1) {
+		if (sem_init(&shared_stuff->sem_full_addr, 1, 0) == -1) {
 			printf("Error in sem_empty_addr %d\n", errno);
 			return -1;
 		}
-		if (sem_init(sem_mutex_addr, 1, 1) == -1) {
+		if (sem_init(&shared_stuff->sem_mutex_addr, 1, 1) == -1) {
 			printf("Error in sem_empty_addr %d\n", errno);
 			return -1;
 		}
-		*in = 0;
-		*out = 0;
-		*count = 0;
+		shared_stuff->in = 0;
+		shared_stuff->out = 0;
+		shared_stuff->count = 0;
 		for (int i = 0; i < BUFFER_SIZE; i++) {
-			buffer[i] = 0;
+			shared_stuff->buffer[i] = 0;
 		}
 		recv_proc();
 	} else {

@@ -177,7 +177,7 @@ def ipcTempTestCase(command, addr_start):
 		#for tc in range(THREAD_START, THREAD_MAX, THREAD_STEP):
 			#i+=1
 			#writeRes(i, "TC", tc, multiProcessTiming(command, tc, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
-		writeRes(100, "TC", 100, multiProcessTiming(command, 100, 1000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
+		writeRes(1, "TC", 100, multiProcessTiming(command, 1, 1000000, 10, addr_start + time.strftime("%Y%m%d-%H%M%S"), False), csvwriter)
 
 	return
 
