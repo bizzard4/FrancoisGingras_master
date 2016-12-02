@@ -48,7 +48,8 @@ if (TS_TESTS)
     set_tests_properties (${NAME} PROPERTIES TIMEOUT ${TIMEOUT})
   endmacro (add_tasksystem_test)
 
-  add_tasksystem_test(system 5)
+  add_tasksystem_test(system_test 5)
+  add_tasksystem_test(simple_task_test 5)
 endif ()
 
 
