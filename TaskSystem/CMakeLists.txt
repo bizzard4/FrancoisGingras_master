@@ -1,6 +1,11 @@
 # Really simple build configuration
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 2.8.7)
+
+project(TaskSystem C)
+
+# User-defined options
+option (TS_TESTS "Build and run task system tests" ON)
 
 add_compile_options(-g)
 
@@ -17,9 +22,7 @@ include_directories(
   BazTask
 )
 
-
 set(SOURCES
-  TaskTest.c
   TextMsg/TextMsg.c 
   BarMsg/BarMsg.c 
   System/System.c 
@@ -29,8 +32,24 @@ set(SOURCES
   BazTask/BazTask.c
 )
 
-add_executable(test.exe ${SOURCES})
-target_link_libraries(test.exe  pthread)
+add_executable(task_system TaskTest.c ${SOURCES})
+target_link_libraries(task_system pthread)
+
+# Build unit tests
+if (TS_TESTS)
+  enable_testing()
+  set(all_tests "")
+
+  macro (add_tasksystem_test NAME TIMEOUT)
+    list (APPEND all_tests ${NAME})
+    add_executable (${NAME} Tests/${NAME}.c ${SOURCES})
+    target_link_libraries(${NAME} pthread)
+    add_test (NAME ${NAME} COMMAND ${NAME})
+    set_tests_properties (${NAME} PROPERTIES TIMEOUT ${TIMEOUT})
+  endmacro (add_tasksystem_test)
+
+  add_tasksystem_test(system 5)
+endif ()
 
 
                  

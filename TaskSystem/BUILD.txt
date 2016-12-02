@@ -1,0 +1,10 @@
+Build instruction 
+
+1) mkdir build
+2) cd build
+3) cmake ..
+4) cmake --build .
+
+Run tests
+
+1) ctest -C Debug .
