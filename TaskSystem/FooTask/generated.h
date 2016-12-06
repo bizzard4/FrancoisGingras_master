@@ -57,7 +57,6 @@ unsigned int FooTask_create(){
 // the pthread initialization. Ultimately, it just calls the programmer's
 // start function.
 static void *run(void *FooTaskRef){
-
 	FooTask this = (FooTask)FooTaskRef;
 	start(this);
 	pthread_exit(NULL);

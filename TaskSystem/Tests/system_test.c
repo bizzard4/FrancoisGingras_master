@@ -9,6 +9,10 @@
 
 System Comm;
 
+/**
+ * Unit test for system component.
+ */
+
 int main(void) {
 
 	// Create the system

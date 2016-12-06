@@ -9,6 +9,10 @@
 
 System Comm;
 
+/**
+ * Simple test showing the execution of a simple task.
+ */
+
 int main(void) {
 
 	Comm = System_create();

@@ -20,6 +20,8 @@ include_directories(
   Errors
   PapaTask
   BazTask
+  DirectSendTask
+  DirectReceiveTask
 )
 
 set(SOURCES
@@ -30,6 +32,8 @@ set(SOURCES
   FooTask/FooTask.c 
   MsgQueue/MsgQ.c
   BazTask/BazTask.c
+  DirectSendTask/DirectSendTask.c
+  DirectReceiveTask/DirectReceiveTask.c
 )
 
 add_executable(task_system TaskTest.c ${SOURCES})
@@ -50,6 +54,7 @@ if (TS_TESTS)
 
   add_tasksystem_test(system_test 5)
   add_tasksystem_test(simple_task_test 5)
+  add_tasksystem_test(direct_receive_test 5)
 endif ()
 
 
