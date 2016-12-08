@@ -35,7 +35,7 @@ static void dropMsg(int targetTaskID){
 
 }
 
-static int getMsgTag(targetTaskID){
+static int getMsgTag(int targetTaskID){
 
 	if(IsEmpty(TaskTable[targetTaskID]))
 		return -1;

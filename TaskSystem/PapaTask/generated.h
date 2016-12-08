@@ -30,7 +30,7 @@ struct PapaTask {
 
 
 // The PapaTask "constructor"
-PapaTask PapaTask_create(){
+unsigned int PapaTask_create(){
 
 	PapaTask newRec = malloc(sizeof(struct PapaTask));
 	if(newRec == NULL)
@@ -45,7 +45,7 @@ PapaTask PapaTask_create(){
 	    exit(-1);
 	}
 
-	return newRec;
+	return newRec->taskID;
 }
 
 

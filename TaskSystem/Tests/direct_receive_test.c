@@ -5,6 +5,7 @@
 
 #include "System.h"
 #include "DirectSendTask.h"
+#include "DirectReceiveTask.h"
 #include "test_util.h"
 
 System Comm;
@@ -28,14 +29,10 @@ int main(void) {
 		TS_ERROR("Comm==null");
 	}
 
-	printf("Creating task\n");
-	DirectSendTask sender = DirectSendTask_create();
-	if (sender == NULL) {
-		TS_ERROR("sender==null");
-	}
+	unsigned int sender = DirectSendTask_create();
 
 	// Delay to let all test finish
-	sleep(2);
+	sleep(3);
 
 	return EXIT_SUCCESS;
 }

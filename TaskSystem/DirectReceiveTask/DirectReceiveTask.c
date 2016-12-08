@@ -10,27 +10,16 @@
 #include <string.h>
 #include <unistd.h>
 
-
-
-
 // this file contains code that the language compiler/runtime
 // would generated automatically
 #include "generated.h"
-
-
-
-
-
 
 /******************************
  * Programmer Code
  *****************************/
 
-
 // message tags
 enum {TEXT_MSG, BAR_MSG};
-
-
 
 /*
  * This is the "main" method for the thread
@@ -39,7 +28,8 @@ static void start(DirectReceiveTask this){
 	// Directly call receive method. This call could miss the message if this task is executed before
 	// the sender was able to send the message. In this case, there is no way to know if a message was lost because
 	// this method is non-blocking.
-	sleep(1); // Make sure to get the message
+	sleep(2); // Make sure to get the message
+	printf("Calling receive\n");
 	receive(this);
 }
 

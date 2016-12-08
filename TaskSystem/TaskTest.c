@@ -15,7 +15,7 @@ int main(void) {
 	puts("\nSimple Task test...\n");
 
 	// create parent task. It will start running immediately.
-	PapaTask taskX = PapaTask_create();
+	unsigned int taskX = PapaTask_create();
 
 	// wait for the threads to do everything.
 	// eventually, we should do a "thread join" type of wait

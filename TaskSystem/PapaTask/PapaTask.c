@@ -1,5 +1,6 @@
 #include "PapaTask.h"
 #include "BazTask.h"
+#include "FooTask.h"
 
 #include "Message.h"
 #include "BarMsg.h"
