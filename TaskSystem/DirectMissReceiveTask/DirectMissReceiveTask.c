@@ -1,4 +1,4 @@
-#include "DirectReceiveTask.h"
+#include "DirectMissReceiveTask.h"
 
 #include "Message.h"
 #include "BarMsg.h"
@@ -24,22 +24,21 @@ enum {TEXT_MSG, BAR_MSG};
 /*
  * This is the "main" method for the thread
  */
-static void start(DirectReceiveTask this){
+static void start(DirectMissReceiveTask this){
 	// Directly call receive method. This call could miss the message if this task is executed before
 	// the sender was able to send the message. In this case, there is no way to know if a message was lost because
 	// this method is non-blocking.
-	sleep(2); // Make sure to get the message
 	printf("Calling receive\n");
 	receive(this);
 }
 
 
 
-static void receive(DirectReceiveTask this){
+static void receive(DirectMissReceiveTask this){
 	int tag = Comm->getMsgTag( this->taskID );
 
 	if(tag == -1) { // Missed the message
-		printf("FAILURE : MESSAGE MISS\n");
+		printf("SUCCESS : MESSAGE MISS\n");
 		return;
 	}
 
@@ -57,8 +56,7 @@ static void receive(DirectReceiveTask this){
 	}
 }
 
-static void handle_BarMsg(DirectReceiveTask this, BarMsg barMsg){
-	printf("SUCCESS : MESSAGE RECEIVED\n");
+static void handle_BarMsg(DirectMissReceiveTask this, BarMsg barMsg){
 	printf("\nTask %d Bar message handler, value: %d\n", this->taskID, barMsg->getValue(barMsg));
 }
 

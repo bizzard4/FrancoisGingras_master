@@ -22,6 +22,8 @@ include_directories(
   BazTask
   DirectSendTask
   DirectReceiveTask
+  DirectMissSendTask
+  DirectMissReceiveTask
 )
 
 set(SOURCES
@@ -34,6 +36,8 @@ set(SOURCES
   BazTask/BazTask.c
   DirectSendTask/DirectSendTask.c
   DirectReceiveTask/DirectReceiveTask.c
+  DirectMissSendTask/DirectMissSendTask.c
+  DirectMissReceiveTask/DirectMissReceiveTask.c
 )
 
 add_executable(task_system TaskTest.c ${SOURCES})
@@ -55,6 +59,7 @@ if (TS_TESTS)
   add_tasksystem_test(system_test 5)
   add_tasksystem_test(simple_task_test 5)
   add_tasksystem_test(direct_receive_test 5)
+  add_tasksystem_test(direct_miss_test 5)
 endif ()
 
 
