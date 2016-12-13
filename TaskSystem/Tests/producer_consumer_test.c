@@ -43,10 +43,10 @@ int main(void) {
 	Comm->send((Message)barMsg, producer_2);
 	barMsg->destroy(barMsg);
 
+	sleep(3);
+
 	// Clean
 	Comm->destroy(Comm);
-
-	sleep(3);
 
 	return EXIT_SUCCESS;
 }
