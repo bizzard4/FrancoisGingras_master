@@ -24,6 +24,11 @@ include_directories(
   DirectReceiveTask
   DirectMissSendTask
   DirectMissReceiveTask
+  LoopSendTask
+  LoopReceiveTask
+  ConsumerTask
+  ProducerTask
+  ProduceMsg
 )
 
 set(SOURCES
@@ -38,6 +43,11 @@ set(SOURCES
   DirectReceiveTask/DirectReceiveTask.c
   DirectMissSendTask/DirectMissSendTask.c
   DirectMissReceiveTask/DirectMissReceiveTask.c
+  LoopSendTask/LoopSendTask.c
+  LoopReceiveTask/LoopReceiveTask.c
+  ConsumerTask/ConsumerTask.c
+  ProducerTask/ProducerTask.c
+  ProduceMsg/ProduceMsg.c
 )
 
 add_executable(task_system TaskTest.c ${SOURCES})
@@ -60,6 +70,8 @@ if (TS_TESTS)
   add_tasksystem_test(simple_task_test 5)
   add_tasksystem_test(direct_receive_test 5)
   add_tasksystem_test(direct_miss_test 5)
+  add_tasksystem_test(loop_task_test 5)
+  add_tasksystem_test(producer_consumer_test 5)
 endif ()
 
 

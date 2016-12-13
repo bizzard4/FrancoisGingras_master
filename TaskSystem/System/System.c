@@ -18,7 +18,6 @@ pthread_mutex_t TaskIDLock = PTHREAD_MUTEX_INITIALIZER;
 
 
 static void send(Message data, int targetTaskID){
-
 	Message sendObj = data->clone(data);
 	Enqueue(sendObj, TaskTable[targetTaskID]);
 }

@@ -5,7 +5,6 @@
 
 #include "System.h"
 #include "DirectSendTask.h"
-#include "DirectReceiveTask.h"
 #include "test_util.h"
 
 System Comm;
