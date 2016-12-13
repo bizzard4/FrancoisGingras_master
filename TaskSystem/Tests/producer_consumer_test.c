@@ -13,6 +13,7 @@ System Comm;
 
 /**
  * Producer(n)-consumer(1) example using task.
+ * Note : Quantities of goods produced and consumed must be put in task ProducerTask and ConsumerTask.
  */
 
 // message tags
@@ -43,7 +44,7 @@ int main(void) {
 	Comm->send((Message)barMsg, producer_2);
 	barMsg->destroy(barMsg);
 
-	sleep(3);
+	sleep(2);
 
 	// Clean
 	Comm->destroy(Comm);

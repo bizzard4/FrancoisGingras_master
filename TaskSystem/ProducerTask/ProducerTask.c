@@ -22,12 +22,14 @@
 // message tags
 enum {TEXT_MSG, BAR_MSG, PRODUCE_MSG};
 
+#define TOTAL_PRODUCE 5
+
 // Task data
 int consumer_id;
-int next_to_produce;
 
 static void start(ProducerTask this){
 	consumer_id = -1; // For error handling
+	int next_to_produce = 0;
 
 	// Get consumer id that we should receive first
 	receive(this);
@@ -36,17 +38,17 @@ static void start(ProducerTask this){
 	}
 
 	// Start to produce
-	next_to_produce = 0;
+	next_to_produce = 1;
 
-	ProduceMsg nextProduce = ProduceMsg_create(PRODUCE_MSG);
-	nextProduce->setProduceId(nextProduce, this->taskID);
-	nextProduce->setProduceValue(nextProduce, next_to_produce);
-	printf("Before send\n");
-	Comm->send((Message)nextProduce, consumer_id);
-	//send(this, (Message)nextProduce, consumer_id);
-	printf("After send\n");
-	nextProduce->destroy(nextProduce);
-	next_to_produce++;
+	for (int i = 0; i < TOTAL_PRODUCE; i++) { // Each producer will create 5 product
+		ProduceMsg nextProduce = ProduceMsg_create(PRODUCE_MSG);
+		nextProduce->setProduceId(nextProduce, this->taskID);
+		nextProduce->setProduceValue(nextProduce, next_to_produce);
+		printf("Producer id=%d sending good id=%d\n", this->taskID, next_to_produce);
+		send(this, (Message)nextProduce, consumer_id);
+		nextProduce->destroy(nextProduce);
+		next_to_produce++;
+	}
 }
 
 // This reciever will loop until the next message is received

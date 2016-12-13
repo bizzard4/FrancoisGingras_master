@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <string.h>
 
-#define MinMsgQSize ( 5 )
+#define MinMsgQSize ( 10 )
 
 
 /*

@@ -15,7 +15,7 @@ static void receive(ConsumerTask this);
 static void *run(void *ConsumerTaskRef);
 static void start(ConsumerTask this);
 
-static void handle_BarMsg(ConsumerTask this, BarMsg barMsg);
+static void handle_ProduceMsg(ConsumerTask this, ProduceMsg produceMsg);
 
 // The ConsumerTask "class"
 struct ConsumerTask {

@@ -16,7 +16,6 @@ static int getTag(ProduceMsg this){
 }
 
 static ProduceMsg clone(ProduceMsg this){
-	printf("IN PRODUCE CLONE\n");
 	ProduceMsg tmp = ProduceMsg_create(0);
 	tmp->tag = this->tag;
 	tmp->producer_id = this->producer_id;
