@@ -3,6 +3,7 @@
 cmake_minimum_required(VERSION 2.8.7)
 
 project(TaskSystem C)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11")
 
 # User-defined options
 option (TS_TESTS "Build and run task system tests" ON)

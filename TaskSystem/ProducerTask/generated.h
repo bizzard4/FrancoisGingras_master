@@ -23,6 +23,7 @@ struct ProducerTask {
 	// private data members
 	pthread_t threadRef;
 	int taskID;
+	int consumer_id;
 
 };
 

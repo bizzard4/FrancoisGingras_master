@@ -25,15 +25,15 @@ enum {TEXT_MSG, BAR_MSG, PRODUCE_MSG};
 #define TOTAL_PRODUCE 5
 
 // Task data
-int consumer_id;
+//__thread int consumer_id;
 
 static void start(ProducerTask this){
-	consumer_id = -1; // For error handling
+	this->consumer_id = -1; // For error handling
 	int next_to_produce = 0;
 
 	// Get consumer id that we should receive first
 	receive(this);
-	if (consumer_id==-1) {
+	if (this->consumer_id==-1) {
 		printf("FAILURE : Consumer id = -1\n");
 	}
 
@@ -45,7 +45,7 @@ static void start(ProducerTask this){
 		nextProduce->setProduceId(nextProduce, this->taskID);
 		nextProduce->setProduceValue(nextProduce, next_to_produce);
 		printf("Producer id=%d sending good id=%d\n", this->taskID, next_to_produce);
-		send(this, (Message)nextProduce, consumer_id);
+		send(this, (Message)nextProduce, this->consumer_id);
 		nextProduce->destroy(nextProduce);
 		next_to_produce++;
 	}
@@ -74,7 +74,7 @@ static void receive(ProducerTask this){
 
 static void handle_BarMsg(ProducerTask this, BarMsg barMsg) {
 	printf("Producer id %d received consumer id : %d\n", this->taskID, barMsg->getValue(barMsg));
-	consumer_id = barMsg->getValue(barMsg);
+	this->consumer_id = barMsg->getValue(barMsg);
 }
 
 
