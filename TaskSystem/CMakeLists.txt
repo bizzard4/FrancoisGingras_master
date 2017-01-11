@@ -39,6 +39,7 @@ set(SOURCES
   PapaTask/PapaTask.c 
   FooTask/FooTask.c 
   MsgQueue/MsgQ.c
+  MsgQueue/UnboundedMsgQ.c
   BazTask/BazTask.c
   DirectSendTask/DirectSendTask.c
   DirectReceiveTask/DirectReceiveTask.c
@@ -73,6 +74,7 @@ if (TS_TESTS)
   add_tasksystem_test(direct_miss_test 5)
   add_tasksystem_test(loop_task_test 5)
   add_tasksystem_test(producer_consumer_test 5)
+  add_tasksystem_test(unbounded_msgq_test 5)
 endif ()
 
 

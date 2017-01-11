@@ -130,7 +130,7 @@ void Enqueue( ElementType X, MsgQ Q ) {
 	pthread_mutex_lock (&(Q->QLock));
 
 	if( IsFull_locked( Q ) )
-		Error( "Full MsgQ" );
+		Error( "Full MsgQ" ); // Resize
 	else {
 		Q->Size++;
 		Q->Rear = Succ_locked( Q->Rear, Q );
