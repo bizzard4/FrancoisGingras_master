@@ -44,7 +44,7 @@ int main(void) {
 	Comm->send((Message)barMsg, producer_2);
 	barMsg->destroy(barMsg);
 
-	sleep(2);
+	sleep(100);
 
 	// Clean
 	Comm->destroy(Comm);

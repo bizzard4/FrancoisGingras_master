@@ -22,7 +22,7 @@
 // message tags
 enum {TEXT_MSG, BAR_MSG, PRODUCE_MSG};
 
-#define TOTAL_PRODUCE 5
+#define TOTAL_PRODUCE 500000
 
 // Task data
 //__thread int consumer_id;

@@ -19,7 +19,7 @@
  *****************************/
 
 #define BUFFER_SIZE 10
-#define TOTAL_CONSUME 10
+#define TOTAL_CONSUME 1000000
 
 // message tags
 enum {TEXT_MSG, BAR_MSG, PRODUCE_MSG};
