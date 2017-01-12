@@ -1,4 +1,4 @@
-#include "MsgQ.h"
+#include "UnboundedMsgQ.h"
 #include "System.h"
 #include "fatal.h"
 
@@ -10,7 +10,7 @@
 #include "Message.h"
 
 
-static MsgQ TaskTable[1000]; // should be dynamically sized!
+static Queue TaskTable[1000]; // should be dynamically sized!
 static unsigned int nextTaskID = 1;
 
 pthread_mutex_t TaskIDLock = PTHREAD_MUTEX_INITIALIZER;
@@ -19,18 +19,20 @@ pthread_mutex_t TaskIDLock = PTHREAD_MUTEX_INITIALIZER;
 
 static void send(Message data, int targetTaskID){
 	Message sendObj = data->clone(data);
-	Enqueue(sendObj, TaskTable[targetTaskID]);
+	Enqueue(TaskTable[targetTaskID], sendObj);
 }
 
 
 static Message receive(int targetTaskID){
-	return FrontAndDequeue(TaskTable[targetTaskID]);
+	return Dequeue(TaskTable[targetTaskID]);
 }
 
 
 static void dropMsg(int targetTaskID){
-	Message msg = FrontAndDequeue(TaskTable[targetTaskID]);
-	msg->destroy(msg);
+	Message msg = Dequeue(TaskTable[targetTaskID]);
+	if (msg != NULL) {
+		msg->destroy(msg);
+	}
 
 }
 
@@ -39,7 +41,10 @@ static int getMsgTag(int targetTaskID){
 	if(IsEmpty(TaskTable[targetTaskID]))
 		return -1;
 
-	Message msg = Front(TaskTable[targetTaskID]);
+	Message msg = Peek(TaskTable[targetTaskID]);
+	if (msg == NULL) {
+		return -1;
+	}
 	return msg->getTag(msg);
 }
 
@@ -54,7 +59,7 @@ static unsigned int getNextTaskID(){
 
 
 static void createMsgQ(unsigned int taskID){
-	TaskTable[taskID] = CreateMsgQ(10000);
+	TaskTable[taskID] = CreateQueue();
 }
 
 

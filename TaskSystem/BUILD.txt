@@ -5,7 +5,7 @@ Build instruction
 4) cmake --build .
 
 Run tests
-1) ctest -C Debug .
+1) ctest (-V) -C Debug .
 
 Regenerate eclipse workspace
 1) cmake -G"Eclipse CDT4 - Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug ..

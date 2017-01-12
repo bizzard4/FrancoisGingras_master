@@ -38,7 +38,6 @@ set(SOURCES
   System/System.c 
   PapaTask/PapaTask.c 
   FooTask/FooTask.c 
-  MsgQueue/MsgQ.c
   MsgQueue/UnboundedMsgQ.c
   BazTask/BazTask.c
   DirectSendTask/DirectSendTask.c
