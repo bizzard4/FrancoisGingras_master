@@ -1,82 +1,13 @@
-# Really simple build configuration
+# Root cmake file to build the library
 
 cmake_minimum_required(VERSION 2.8.7)
-
 project(TaskSystem C)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c11")
 
-# User-defined options
-option (TS_TESTS "Build and run task system tests" ON)
+set(PROJECT_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+#message(STATUS ${PROJECT_INCLUDE_DIR})
 
-add_compile_options(-g)
+# Task system library
+add_subdirectory(src)
 
-include_directories(
-  ${CMAKE_SOURCE_DIR} 
-  System
-  BarMsg
-  FooTask
-  MsgQueue
-  Message
-  TextMsg
-  Errors
-  PapaTask
-  BazTask
-  DirectSendTask
-  DirectReceiveTask
-  DirectMissSendTask
-  DirectMissReceiveTask
-  LoopSendTask
-  LoopReceiveTask
-  ConsumerTask
-  ProducerTask
-  ProduceMsg
-)
-
-set(SOURCES
-  TextMsg/TextMsg.c 
-  BarMsg/BarMsg.c 
-  System/System.c 
-  PapaTask/PapaTask.c 
-  FooTask/FooTask.c 
-  MsgQueue/UnboundedMsgQ.c
-  BazTask/BazTask.c
-  DirectSendTask/DirectSendTask.c
-  DirectReceiveTask/DirectReceiveTask.c
-  DirectMissSendTask/DirectMissSendTask.c
-  DirectMissReceiveTask/DirectMissReceiveTask.c
-  LoopSendTask/LoopSendTask.c
-  LoopReceiveTask/LoopReceiveTask.c
-  ConsumerTask/ConsumerTask.c
-  ProducerTask/ProducerTask.c
-  ProduceMsg/ProduceMsg.c
-)
-
-add_executable(task_system TaskTest.c ${SOURCES})
-target_link_libraries(task_system pthread)
-
-# Build unit tests
-if (TS_TESTS)
-  enable_testing()
-  set(all_tests "")
-
-  macro (add_tasksystem_test NAME TIMEOUT)
-    list (APPEND all_tests ${NAME})
-    add_executable (${NAME} Tests/${NAME}.c ${SOURCES})
-    target_link_libraries(${NAME} pthread)
-    add_test (NAME ${NAME} COMMAND ${NAME})
-    set_tests_properties (${NAME} PROPERTIES TIMEOUT ${TIMEOUT})
-  endmacro (add_tasksystem_test)
-
-  add_tasksystem_test(system_test 5)
-  add_tasksystem_test(simple_task_test 5)
-  add_tasksystem_test(direct_receive_test 5)
-  add_tasksystem_test(direct_miss_test 5)
-  add_tasksystem_test(loop_task_test 5)
-  add_tasksystem_test(producer_consumer_test 5)
-  add_tasksystem_test(unbounded_msgq_test 5)
-endif ()
-
-
-                 
-                  
-                  
+# Test
+add_subdirectory(test)
