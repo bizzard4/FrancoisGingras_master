@@ -23,31 +23,32 @@ threads = None
 
 # Represent a task (bucket) for the sample sort
 class ss_task(threading.Thread):
-	def __init__(self, threadID, name, data, N, SN, K, global_lock, barrier_lock):
+	def __init__(self, threadID, name, sample, N, SN, K, global_lock, barrier_lock):
 		threading.Thread.__init__(self)
 		self.threadID = threadID
 		self.name = name
-		self.data = data
+		self.sample = sample
 		self.N = N
 		self.SN = SN
 		self.K = K
 		self.global_lock = global_lock
 		self.barrier_lock = barrier_lock
 		self.splitters = None
+		self.data = []
 
 	def run(self):
 		global root_sample, root_sample_received, root_sample_event, threads
 
 		# Sort data (nlogn)
-		self.data = sorted(self.data)
-		print("STARTING", self.name, "-", self.data)
+		self.sample = sorted(self.sample)
+		print("STARTING", self.name, "-", self.sample)
 
 		# Gather sample and send them to the main method (using lock)
 		step = int(self.SN / self.K)
 		sample_to_send = []
 		print("SAMPLING", self.name, "-",  step)
 		for ni in range(0, self.SN, step):
-			sample_to_send.append(self.data[ni])		
+			sample_to_send.append(self.sample[ni])		
 
 		self.global_lock.acquire()
 		print(root_sample_received, root_sample)
@@ -63,11 +64,16 @@ class ss_task(threading.Thread):
 
 		# Go throught all data and send them at the right task
 		print("SWAPPING", self.name, "-", self.splitters)
-		for val in self.data:
-			for i in range(len(self.splitters)):
+		for val in self.sample:
+			splitter_size = len(self.splitters)
+			for i in range(1, splitter_size):
 				if val < self.splitters[i]:
-					threads[i].insertValue(val)
+					print(self.name, "sending", val, "to task", i-1)
+					threads[i-1].insertValue(val)
 					break
+				elif i == splitter_size-1:
+					print(self.name, "sending", val, "to task", i)
+					threads[i].insertValue(val)
 
 	# In final version, this would do a insertion sort, but here we will just do append and sorted
 	def insertValue(self, newVal):
@@ -75,6 +81,7 @@ class ss_task(threading.Thread):
 		self.data = sorted(self.data)
 
 	def setSplitter(self, splitters):
+		print(self.name, "- Splitters = ", splitters)
 		self.splitters = splitters
 
 # Return sorted array (copy of)
@@ -113,8 +120,13 @@ def samplesort(data, N, K):
 
 		# Compute and send splitters info to all task
 		root_sample = sorted(root_sample)
+		step = int(len(root_sample) / K)
+		print("Splitters step", step)
+		splitters = []
+		for ni in range(0, len(root_sample), step):
+			splitters.append(root_sample[ni])	
 		for ki in range(K):
-			threads[ki].setSplitter([1, 7])
+			threads[ki].setSplitter(splitters)
 
 		# Unlock barrier, so all thread can start swapping (barrier synchronization)
 		barrier.wait()
@@ -123,7 +135,9 @@ def samplesort(data, N, K):
 		for ki in range(K):
 			threads[ki].join()
 
-		print("Done")
+		print("Done - final data")
+		for ki in range(K):
+			print("Task", ki, threads[ki].data)
 	except Exception as e:
 		print("Error while creating threads", e)
 
@@ -147,6 +161,6 @@ k_3 = 4
 
 samplesort(input_1, input_1_n, k_1)
 print()
-#samplesort(input_2, input_2_n, k_2)
+samplesort(input_2, input_2_n, k_2)
 print()
-#samplesort(input_3, input_3_n, k_3)
+samplesort(input_3, input_3_n, k_3)
