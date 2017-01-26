@@ -2,6 +2,7 @@ import threading
 import copy
 import asyncio
 import math
+import random
 
 # Sample sort implementation in Python for the purpose of understanding the concept
 
@@ -160,6 +161,13 @@ for i in range(19):
 input_3_n = len(input_3)
 k_3 = 4
 
+input_4 = []
+for i in range(200000):
+	input_4.append(random.randrange(10000))
+input_4_n = 200000
+k_4 = 59
+
+
 # Test run
 
 samplesort(input_1, input_1_n, k_1)
@@ -167,3 +175,5 @@ print()
 samplesort(input_2, input_2_n, k_2)
 print()
 samplesort(input_3, input_3_n, k_3)
+print()
+samplesort(input_4, input_4_n, k_4)
