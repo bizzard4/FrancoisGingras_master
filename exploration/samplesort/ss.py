@@ -35,6 +35,7 @@ class ss_task(threading.Thread):
 		self.barrier_lock = barrier_lock
 		self.splitters = None
 		self.data = []
+		self.data_lock = threading.Lock()
 
 	def run(self):
 		global root_sample, root_sample_received, root_sample_event, threads
@@ -77,8 +78,10 @@ class ss_task(threading.Thread):
 
 	# In final version, this would do a insertion sort, but here we will just do append and sorted
 	def insertValue(self, newVal):
+		self.data_lock.acquire()
 		self.data.append(newVal)
 		self.data = sorted(self.data)
+		self.data_lock.release()
 
 	def setSplitter(self, splitters):
 		print(self.name, "- Splitters = ", splitters)
