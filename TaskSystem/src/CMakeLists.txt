@@ -17,6 +17,7 @@ set(SOURCES
   Tasks/LoopReceiveTask/LoopReceiveTask.c
   Tasks/ConsumerTask/ConsumerTask.c
   Tasks/ProducerTask/ProducerTask.c
+  Tasks/SampleSortTask/SampleSortTask.c
 )
 
 add_compile_options(-g)
