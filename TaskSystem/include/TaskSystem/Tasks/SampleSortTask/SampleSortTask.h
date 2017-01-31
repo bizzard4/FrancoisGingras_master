@@ -3,6 +3,6 @@
 #define SampleSortTask_H_
 
 typedef struct SampleSortTask *SampleSortTask;
-unsigned int PSampleSortTask_create();
+unsigned int SampleSortTask_create();
 
 #endif /* SampleSortTask_H_ */

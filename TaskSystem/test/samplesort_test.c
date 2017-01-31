@@ -9,6 +9,8 @@
 
 System Comm;
 
+int done = 0; // Global variable for testing purpose
+
 /**
  * Sample sort test case.
  */
@@ -23,7 +25,8 @@ int main(void) {
 	// Create the samplesort task
 	unsigned int samplesort = SampleSortTask_create();
 
-	// TODO : Wait for the task to finish (need some sort of signal)
+	// Without mecanic to wait on a task, we will use this temporary global variable.
+	while (done == 0);
 
 	// Clean
 	Comm->destroy(Comm);

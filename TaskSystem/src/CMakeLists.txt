@@ -6,6 +6,7 @@ set(SOURCES
   Messages/TextMsg/TextMsg.c 
   Messages/BarMsg/BarMsg.c 
   Messages/ProduceMsg/ProduceMsg.c
+  Messages/TopologyMsg/TopologyMsg.c
   Tasks/PapaTask/PapaTask.c 
   Tasks/FooTask/FooTask.c 
   Tasks/BazTask/BazTask.c
@@ -18,6 +19,7 @@ set(SOURCES
   Tasks/ConsumerTask/ConsumerTask.c
   Tasks/ProducerTask/ProducerTask.c
   Tasks/SampleSortTask/SampleSortTask.c
+  Tasks/BucketTask/BucketTask.c
 )
 
 add_compile_options(-g)
