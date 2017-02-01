@@ -55,6 +55,7 @@ static void start(SampleSortTask this) {
 	// Send done signal to destroy task
 
 	// To unlock test case
+	sleep(3);
 	done = 1;
 }
 
