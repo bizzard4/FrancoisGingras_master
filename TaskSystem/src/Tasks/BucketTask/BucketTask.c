@@ -14,6 +14,8 @@
 // would generated automatically
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
+#define K 2
+
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG};
 
@@ -24,13 +26,28 @@ static void start(BucketTask this) {
 	// Get sample data
 	receive(this);
 
-	// Return sample
+	// Pick sample and send them to root
+	int step = this->sample_size / K; // TODO : NEED K IN TOPOLOGY
+	int samples[100]; // TODO : Need to be dynamic
+	int count = 0;
+	for (int i = 0; i < this->sample_size; i += step) {
+		samples[count] = this->sample_values[i];
+		count++;
+	}
+	IntArrayMsg sample_msg = IntArrayMsg_create(INTARRAY_MSG);
+	sample_msg->setValues(sample_msg, count, samples);
+	send(this, (Message)sample_msg, this->root_id);
 
 	// Get splitters
+	// receive(this);
 
 	// Propagate data
 
 	// Send "done" to root
+
+	// TODO : Delete topology array
+	// TODO : Delete sample data
+	// TODO : Delete final result
 }
 
 static void receive(BucketTask this) {
@@ -59,8 +76,23 @@ static void receive(BucketTask this) {
 
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg) {
 	printf("Bucket task %d received topology\n", this->taskID);
+	this->bucket_count = topologyMsg->bucket_count;
+	this->bucket_ids = malloc(topologyMsg->bucket_count * sizeof(unsigned int));
+	for (int i = 0; i < topologyMsg->bucket_count; i++) {
+		this->bucket_ids[i] = topologyMsg->bucket_ids[i];
+	}
+	this->root_id = topologyMsg->root_id;
+	// TODO : Add to topology message
+	this->sample_size = 5; // SN
+	this->data_size = 10; // N
 }
 
 static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg) {
 	printf("Bucket task %d received sample data\n", this->taskID);
+
+	this->sample_count = intarrayMsg->getSize(intarrayMsg);
+	this->sample_values = malloc(intarrayMsg->getSize(intarrayMsg) * sizeof(int));
+	for (int i = 0; i < intarrayMsg->getSize(intarrayMsg); i++) {
+		this->sample_values[i] = intarrayMsg->getValue(intarrayMsg, i);
+	}
 }

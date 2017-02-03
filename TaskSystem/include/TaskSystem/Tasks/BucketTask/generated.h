@@ -24,6 +24,17 @@ struct BucketTask {
 	// private data members
 	pthread_t threadRef;
 	int taskID;
+
+	int bucket_count;
+	unsigned int* bucket_ids;
+	unsigned int root_id;
+	int sample_size;
+	int data_size;
+
+	int sample_count;
+	int* sample_values;
+
+	// TODO : Final value, copy
 };
 
 // The BucketTask "constructor"

@@ -65,7 +65,7 @@ static void start(SampleSortTask this) {
 		if (ki==(K-1)) { // Need to happend the last part of the array to the end
 			// TODO
 		}
-
+		data_msg->setValues(data_msg, size_per_task, data_to_task);
 		send(this, (Message)data_msg, buckets[ki]);
 		data_msg->destroy(data_msg);
 	}
