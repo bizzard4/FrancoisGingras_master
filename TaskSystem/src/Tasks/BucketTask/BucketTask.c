@@ -27,16 +27,16 @@ static void start(BucketTask this) {
 	receive(this);
 
 	// Pick sample and send them to root
-	int step = this->sample_size / K; // TODO : NEED K IN TOPOLOGY
-	int samples[100]; // TODO : Need to be dynamic
-	int count = 0;
-	for (int i = 0; i < this->sample_size; i += step) {
-		samples[count] = this->sample_values[i];
-		count++;
-	}
-	IntArrayMsg sample_msg = IntArrayMsg_create(INTARRAY_MSG);
-	sample_msg->setValues(sample_msg, count, samples);
-	send(this, (Message)sample_msg, this->root_id);
+	//int step = this->sample_size / K; // TODO : NEED K IN TOPOLOGY
+	//int samples[100]; // TODO : Need to be dynamic
+	//int count = 0;
+	//for (int i = 0; i < this->sample_size; i += step) {
+	//	samples[count] = this->sample_values[i];
+	//	count++;
+	//}
+	//IntArrayMsg sample_msg = IntArrayMsg_create(INTARRAY_MSG);
+	//ample_msg->setValues(sample_msg, count, samples);
+	//send(this, (Message)sample_msg, this->root_id);
 
 	// Get splitters
 	// receive(this);
@@ -57,6 +57,8 @@ static void receive(BucketTask this) {
 	}
 
 	Message msg;
+
+	printf("Bucket task %d received tag=%d\n", this->taskID, tag);
 
 	// match the message to the right message "handler"
 	switch (tag) {

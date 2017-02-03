@@ -57,7 +57,7 @@ static void start(SampleSortTask this) {
 		for (int i = 0; i < size_per_task; i++) {
 			int val = this->data[current_index+i];
 			printf("%d ", val);
-			data_to_task = val;
+			data_to_task[i] = val;
 		}
 		current_index += size_per_task;
 		printf(" to task %d\n", buckets[ki]);
@@ -66,15 +66,16 @@ static void start(SampleSortTask this) {
 			// TODO
 		}
 		data_msg->setValues(data_msg, size_per_task, data_to_task);
+		free(data_msg);
 		send(this, (Message)data_msg, buckets[ki]);
 		data_msg->destroy(data_msg);
 	}
 
 
 	// Wait on K samples from bucket task
-	for (int ki = 0; ki < K; ki++) {
-		receive(this);
-	}
+	//for (int ki = 0; ki < K; ki++) {
+	//	receive(this);
+	//}
 
 	// Compute and send splitters information
 

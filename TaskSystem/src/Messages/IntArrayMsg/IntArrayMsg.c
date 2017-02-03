@@ -16,8 +16,10 @@ static int getTag(IntArrayMsg this){
 }
 
 static IntArrayMsg clone(IntArrayMsg this){
-	IntArrayMsg tmp = IntArrayMsg_create(0);
+	IntArrayMsg tmp = IntArrayMsg_create(this->tag);
 	tmp->tag = this->tag;
+
+	printf("IntArrayMsg - Clone call with tag %d\n", this->tag);
 
 	tmp->size = this->size;
 	tmp->values = malloc(this->size * sizeof(int)); // Deep copy
