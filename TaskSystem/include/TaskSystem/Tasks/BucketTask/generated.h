@@ -16,6 +16,7 @@ static void *run(void *BucketTaskkRef);
 static void start(BucketTask this);
 
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg);
+static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg);
 
 // The BucketTask "class"
 struct BucketTask {

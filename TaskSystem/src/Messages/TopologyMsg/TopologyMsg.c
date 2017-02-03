@@ -23,7 +23,7 @@ static TopologyMsg clone(TopologyMsg this){
 	tmp->root_id = this->root_id;
 	tmp->bucket_ids = malloc(this->bucket_count * sizeof(unsigned int)); // Deep copy
 	for (int i = 0; i < this->bucket_count; i++) {
-			tmp->bucket_ids[i] = this->bucket_ids[i];
+		tmp->bucket_ids[i] = this->bucket_ids[i];
 	}
 
 	return tmp;

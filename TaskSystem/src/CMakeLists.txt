@@ -7,6 +7,7 @@ set(SOURCES
   Messages/BarMsg/BarMsg.c 
   Messages/ProduceMsg/ProduceMsg.c
   Messages/TopologyMsg/TopologyMsg.c
+  Messages/IntArrayMsg/IntArrayMsg.c
   Tasks/PapaTask/PapaTask.c 
   Tasks/FooTask/FooTask.c 
   Tasks/BazTask/BazTask.c

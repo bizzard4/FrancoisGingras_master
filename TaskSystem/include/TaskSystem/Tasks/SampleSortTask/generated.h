@@ -15,12 +15,17 @@ static void receive(SampleSortTask this);
 static void *run(void *SampleSortTaskRef);
 static void start(SampleSortTask this);
 
+static void handle_IntArrayMsg(SampleSortTask this, IntArrayMsg intarrayMsg);
+
 // The SampleSortTask "class"
 struct SampleSortTask {
 
 	// private data members
 	pthread_t threadRef;
 	int taskID;
+
+	int* data;
+	int size;
 };
 
 // The SampleSortTask "constructor"
