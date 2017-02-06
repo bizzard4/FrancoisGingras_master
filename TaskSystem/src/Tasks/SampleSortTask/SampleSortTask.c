@@ -66,7 +66,7 @@ static void start(SampleSortTask this) {
 			// TODO
 		}
 		data_msg->setValues(data_msg, size_per_task, data_to_task);
-		free(data_msg);
+		free(data_to_task);
 		send(this, (Message)data_msg, buckets[ki]);
 		data_msg->destroy(data_msg);
 	}
