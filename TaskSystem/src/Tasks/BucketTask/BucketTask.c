@@ -16,6 +16,8 @@
 // would generated automatically
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
+//#define DEBUG_PROPAGATION
+
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
 
@@ -66,14 +68,18 @@ static void start(BucketTask this) {
 		int val = this->sample_data_values[i];
 		for (int si = 1; si < this->splitter_size; si++) {
 			if (val < this->splitters[si]) {
+#ifdef DEBUG_PROPAGATION
 				printf("Bucket id=%d sending value %d to bucket i=%d\n", this->taskID, val, si-1);
+#endif
 				BarMsg bar_msg = BarMsg_create(BAR_MSG);
 				bar_msg->setValue(bar_msg, val);
 				send(this, (Message)bar_msg, this->bucket_ids[si-1]);
 				bar_msg->destroy(bar_msg);
 				break;
 			} else if (si == (this->splitter_size-1)) {
+#ifdef DEBUG_PROPAGATION
 				printf("Bucket id=%d sending value %d to bucket i=%d\n", this->taskID, val, si);
+#endif
 				BarMsg bar_msg = BarMsg_create(BAR_MSG);
 				bar_msg->setValue(bar_msg, val);
 				send(this, (Message)bar_msg, this->bucket_ids[si]);
@@ -94,7 +100,7 @@ static void start(BucketTask this) {
 	}
 
 	// Receive "done" from root and printf final values
-	printf("Bucket %d final values : ", this->taskID);
+	printf("Bucket %d final values (count=%d) : ", this->taskID, this->final_data_size);
 	for (int i = 0; i < this->final_data_size; i++) {
 		printf("%d ", this->final_data_values[i]);
 	}
@@ -182,7 +188,9 @@ static void handle_DoneMsg(BucketTask this, DoneMsg doneMsg) {
 }
 
 static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
+#ifdef DEBUG_PROPAGATION
 	printf("Bucket task %d received a value %d\n", this->taskID, barMsg->getValue(barMsg));
+#endif
 
 	// TODO : Inserting sort?
 	this->final_data_size += 1;

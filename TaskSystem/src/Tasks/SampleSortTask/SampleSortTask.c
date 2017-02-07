@@ -146,7 +146,6 @@ static void start(SampleSortTask this) {
 	printf("Samplesort completed\n");
 
 	// To unlock test case
-	sleep(3); // TODO : Temp
 	done = 1;
 }
 

@@ -30,21 +30,41 @@ int main(void) {
 	// Create the samplesort task
 	unsigned int samplesort = SampleSortTask_create();
 
+	int k;
+	scanf("%d", &k);
+
+
+
 	// Send K size
 	BarMsg k_msg = BarMsg_create(BAR_MSG);
-	k_msg->setValue(k_msg, 6);
+	k_msg->setValue(k_msg, k);
 	Comm->send((Message)k_msg, samplesort);
 	k_msg->destroy(k_msg);
 
+	int n;
+	scanf("%d", &n);
+
+	printf("Starting samplesort for K=%d and N=%d\n", k, n);
+
+	int temp;
+	int* test_data = malloc(n * sizeof(int));
+	for (int i = 0; i < n; i++) { // Read n values
+		scanf("%d", &temp);
+		test_data[i] = temp;
+	}
+
+
 	// Send test data
 	IntArrayMsg data_msg = IntArrayMsg_create(INTARRAY_MSG);
-	int test_data[10] = {2, 5, 8, 6, 3, 1, 7, 9, 10, 4};
-	data_msg->setValues(data_msg, 10, test_data);
+
+	data_msg->setValues(data_msg, n, test_data);
 	Comm->send((Message)data_msg, samplesort);
 	data_msg->destroy(data_msg);
+	free(test_data);
 
 	// Without mecanic to wait on a task, we will use this temporary global variable.
 	while (done == 0);
+	sleep(3);
 
 	// Clean
 	Comm->destroy(Comm);
