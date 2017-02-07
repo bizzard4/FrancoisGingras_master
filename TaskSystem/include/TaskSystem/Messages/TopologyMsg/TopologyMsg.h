@@ -18,6 +18,8 @@ struct TopologyMsg {
 	// Msg private members
 	int bucket_count;
 	int root_id;
+	int sample_size;
+	int data_size;
 	unsigned int* bucket_ids;
 	void (*setBucketIds)(TopologyMsg this, int count, unsigned int ids[]);
 	unsigned int (*getBucketId)(TopologyMsg this, int index);

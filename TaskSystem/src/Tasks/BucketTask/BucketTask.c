@@ -16,8 +16,6 @@
 // would generated automatically
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
-#define K 2
-
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
 
@@ -45,7 +43,7 @@ static void start(BucketTask this) {
 	printf("\n");
 
 	// Pick sample and send them to root
-	int step = this->sample_size / K; // TODO : NEED K IN TOPOLOGY
+	int step = this->sample_size / this->bucket_count;
 	int samples[100]; // TODO : Need to be dynamic
 	int count = 0;
 	for (int i = 0; i < this->sample_size; i += step) {
@@ -73,6 +71,7 @@ static void start(BucketTask this) {
 				bar_msg->setValue(bar_msg, val);
 				send(this, (Message)bar_msg, this->bucket_ids[si-1]);
 				bar_msg->destroy(bar_msg);
+				break;
 			} else if (si == (this->splitter_size-1)) {
 				printf("Bucket id=%d sending value %d to bucket i=%d\n", this->taskID, val, si);
 				BarMsg bar_msg = BarMsg_create(BAR_MSG);
@@ -142,21 +141,20 @@ static void receive(BucketTask this) {
 
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg) {
 	printf("Bucket task %d received topology\n", this->taskID);
-	this->bucket_count = topologyMsg->bucket_count;
+	this->bucket_count = topologyMsg->bucket_count; // K
 	this->bucket_ids = malloc(topologyMsg->bucket_count * sizeof(unsigned int));
 	for (int i = 0; i < topologyMsg->bucket_count; i++) {
 		this->bucket_ids[i] = topologyMsg->bucket_ids[i];
 	}
 	this->root_id = topologyMsg->root_id;
-	// TODO : Add to topology message
-	this->sample_size = 5; // SN
-	this->data_size = 10; // N
+	this->sample_size = topologyMsg->sample_size; // SN
+	this->data_size = topologyMsg->data_size; // N
 }
 
 static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg) {
 	switch(this->state) {
 	case WAITING_ON_SAMPLE_DATA:
-		printf("Bucket task %d received sample data\n", this->taskID);
+		printf("Bucket task %d received sample data (size=%d)\n", this->taskID, intarrayMsg->getSize(intarrayMsg));
 
 		this->sample_data_size = intarrayMsg->getSize(intarrayMsg);
 		this->sample_data_values = malloc(intarrayMsg->getSize(intarrayMsg) * sizeof(int));

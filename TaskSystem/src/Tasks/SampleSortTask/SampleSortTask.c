@@ -18,7 +18,7 @@
 
 int done; // For the test case, without any good way to "wait" on a task to be done, we will use that.
 
-#define K 2 // TODO : Make this generic
+#define K 3 // TODO : Make this generic
 
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG};
@@ -40,41 +40,52 @@ static void start(SampleSortTask this) {
 	}
 	printf("Bucket tasks created\n");
 
+	// Get the data to sort
+	this->state = WAITING_ON_DATA;
+	receive(this);
+	int size_per_task = this->size / K;
+
 	// Send topology to all K bucket task
 	TopologyMsg topo_msg = TopologyMsg_create(TOPOLOGY_MSG);
 	topo_msg->setRootId(topo_msg, this->taskID);
 	topo_msg->setBucketIds(topo_msg, K, buckets);
+	topo_msg->sample_size = size_per_task;
+	topo_msg->data_size = this->size;
 	for (int i = 0; i < K; i++) {
 		send(this, (Message)topo_msg, buckets[i]);
 	}
 	topo_msg->destroy(topo_msg);
 	printf("Topology send\n");
 
-	// Get the data to sort
-	this->state = WAITING_ON_DATA;
-	receive(this);
-
 	// Send sample data to all K bucket task
-	int size_per_task = this->size / K;
 	int current_index = 0;
 	for (int ki = 0; ki < K; ki++) {
 		IntArrayMsg data_msg = IntArrayMsg_create(INTARRAY_MSG);
 
-		printf("Preparing sample of size %d\n", size_per_task);
-		printf("Sending data=");
-		int* data_to_task = malloc(size_per_task * sizeof(int));
+		printf("Sending sample data=");
+		int current_size = size_per_task;
+		int* data_to_task = malloc(current_size * sizeof(int));
 		for (int i = 0; i < size_per_task; i++) {
 			int val = this->data[current_index+i];
 			printf("%d ", val);
 			data_to_task[i] = val;
 		}
 		current_index += size_per_task;
-		printf(" to task %d\n", buckets[ki]);
-
 		if (ki==(K-1)) { // Need to happend the last part of the array to the end
-			// TODO
+			int rest = this->size - current_index;
+			if (rest > 0) {
+				data_to_task = realloc(data_to_task, (current_size+rest) * sizeof(int));
+				for (int i = 0; i < rest; i++) {
+					int val = this->data[current_index+i];
+					printf("%d ", val);
+					data_to_task[size_per_task+i] = val;
+				}
+				current_size += rest;
+			}
+
 		}
-		data_msg->setValues(data_msg, size_per_task, data_to_task);
+		printf(" to task %d (size=%d)\n", buckets[ki], current_size);
+		data_msg->setValues(data_msg, current_size, data_to_task);
 		free(data_to_task);
 		send(this, (Message)data_msg, buckets[ki]);
 		data_msg->destroy(data_msg);
