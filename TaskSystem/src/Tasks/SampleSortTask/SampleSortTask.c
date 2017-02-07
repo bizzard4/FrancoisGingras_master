@@ -4,6 +4,7 @@
 #include "TaskSystem/Messages/TopologyMsg/TopologyMsg.h"
 #include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
 #include "TaskSystem/Messages/DoneMsg/DoneMsg.h"
+#include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
 
@@ -18,10 +19,8 @@
 
 int done; // For the test case, without any good way to "wait" on a task to be done, we will use that.
 
-#define K 3 // TODO : Make this generic
-
 // Messages
-enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG};
+enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
 
 enum {WAITING_ON_DATA, WAITING_ON_SAMPLES};
 
@@ -32,10 +31,13 @@ int samplesorttask_cmpfunc(const void* a, const void* b)
 
 static void start(SampleSortTask this) {
 
-	// Create K bucket task
-	unsigned int buckets[K];
+	// Get the number of buckets
+	receive(this);
 
-	for(int i = 0; i < K; i++) {
+	// Create K bucket task
+	unsigned int buckets[this->K];
+
+	for(int i = 0; i < this->K; i++) {
 		buckets[i] = BucketTask_create();
 	}
 	printf("Bucket tasks created\n");
@@ -43,15 +45,15 @@ static void start(SampleSortTask this) {
 	// Get the data to sort
 	this->state = WAITING_ON_DATA;
 	receive(this);
-	int size_per_task = this->size / K;
+	int size_per_task = this->size / this->K;
 
 	// Send topology to all K bucket task
 	TopologyMsg topo_msg = TopologyMsg_create(TOPOLOGY_MSG);
 	topo_msg->setRootId(topo_msg, this->taskID);
-	topo_msg->setBucketIds(topo_msg, K, buckets);
+	topo_msg->setBucketIds(topo_msg, this->K, buckets);
 	topo_msg->sample_size = size_per_task;
 	topo_msg->data_size = this->size;
-	for (int i = 0; i < K; i++) {
+	for (int i = 0; i < this->K; i++) {
 		send(this, (Message)topo_msg, buckets[i]);
 	}
 	topo_msg->destroy(topo_msg);
@@ -59,7 +61,7 @@ static void start(SampleSortTask this) {
 
 	// Send sample data to all K bucket task
 	int current_index = 0;
-	for (int ki = 0; ki < K; ki++) {
+	for (int ki = 0; ki < this->K; ki++) {
 		IntArrayMsg data_msg = IntArrayMsg_create(INTARRAY_MSG);
 
 		printf("Sending sample data=");
@@ -71,7 +73,7 @@ static void start(SampleSortTask this) {
 			data_to_task[i] = val;
 		}
 		current_index += size_per_task;
-		if (ki==(K-1)) { // Need to happend the last part of the array to the end
+		if (ki==(this->K-1)) { // Need to happend the last part of the array to the end
 			int rest = this->size - current_index;
 			if (rest > 0) {
 				data_to_task = realloc(data_to_task, (current_size+rest) * sizeof(int));
@@ -97,7 +99,7 @@ static void start(SampleSortTask this) {
 	this->state = WAITING_ON_SAMPLES;
 	this->samples = NULL;
 	this->sample_size = 0;
-	for (int ki = 0; ki < K; ki++) {
+	for (int ki = 0; ki < this->K; ki++) {
 		receive(this);
 	}
 	printf("Received all samples from buckets\n");
@@ -106,7 +108,7 @@ static void start(SampleSortTask this) {
 	qsort(this->samples, this->sample_size, sizeof(int), samplesorttask_cmpfunc);
 
 	// Compute and send splitters information
-	int step = this->sample_size / K;
+	int step = this->sample_size / this->K;
 	int splitters[100]; // TODO : Dynamic this
 	int count = 0;
 	printf("Splitters : ");
@@ -119,14 +121,14 @@ static void start(SampleSortTask this) {
 	printf("\n");
 	IntArrayMsg splitters_msg = IntArrayMsg_create(INTARRAY_MSG);
 	splitters_msg->setValues(splitters_msg, count, splitters);
-	for (int ki = 0; ki < K; ki++) {
+	for (int ki = 0; ki < this->K; ki++) {
 		send(this, (Message)splitters_msg, buckets[ki]);
 	}
 	splitters_msg->destroy(splitters_msg);
 	printf("Done sending splitters\n");
 
 	// Wait on K done signal
-	for (int ki = 0; ki < K; ki++) {
+	for (int ki = 0; ki < this->K; ki++) {
 		receive(this);
 	}
 	printf("Received all bucket done messaage\n");
@@ -137,7 +139,7 @@ static void start(SampleSortTask this) {
 	// Send done signal to destroy task
 	DoneMsg done_msg = DoneMsg_create(DONE_MSG);
 	done_msg->success = 1;
-	for (int ki = 0; ki < K; ki++) {
+	for (int ki = 0; ki < this->K; ki++) {
 		send(this, (Message)done_msg, buckets[ki]);
 	}
 	done_msg->destroy(done_msg);
@@ -165,6 +167,10 @@ static void receive(SampleSortTask this) {
 	case DONE_MSG:
 		msg = Comm->receive(this->taskID);
 		handle_DoneMsg(this, (DoneMsg)msg);
+		break;
+	case BAR_MSG:
+		msg = Comm->receive(this->taskID);
+		handle_BarMsg(this, (BarMsg)msg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
@@ -214,4 +220,9 @@ static void handle_IntArrayMsg(SampleSortTask this, IntArrayMsg intarrayMsg) {
 
 static void handle_DoneMsg(SampleSortTask this, DoneMsg doneMsg) {
 	printf("Samplesort task id %d received done message\n", this->taskID);
+}
+
+static void handle_BarMsg(SampleSortTask this, BarMsg barMsg) {
+	printf("Samplesort task id %d received K\n", this->taskID);
+	this->K = barMsg->getValue(barMsg);
 }

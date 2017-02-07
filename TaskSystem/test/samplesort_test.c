@@ -5,6 +5,7 @@
 
 #include "TaskSystem/Tasks/SampleSortTask/SampleSortTask.h"
 #include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
+#include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/System.h"
 #include "test_util.h"
 
@@ -13,7 +14,7 @@ System Comm;
 int done = 0; // Global variable for testing purpose
 
 // Messages
-enum {TOPOLOGY_MSG, INTARRAY_MSG};
+enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
 
 /**
  * Sample sort test case.
@@ -29,6 +30,11 @@ int main(void) {
 	// Create the samplesort task
 	unsigned int samplesort = SampleSortTask_create();
 
+	// Send K size
+	BarMsg k_msg = BarMsg_create(BAR_MSG);
+	k_msg->setValue(k_msg, 6);
+	Comm->send((Message)k_msg, samplesort);
+	k_msg->destroy(k_msg);
 
 	// Send test data
 	IntArrayMsg data_msg = IntArrayMsg_create(INTARRAY_MSG);

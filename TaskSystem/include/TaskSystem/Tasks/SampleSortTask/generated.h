@@ -17,6 +17,7 @@ static void start(SampleSortTask this);
 
 static void handle_IntArrayMsg(SampleSortTask this, IntArrayMsg intarrayMsg);
 static void handle_DoneMsg(SampleSortTask this, DoneMsg doneMsg);
+static void handle_BarMsg(SampleSortTask this, BarMsg barMsg);
 
 // The SampleSortTask "class"
 struct SampleSortTask {
@@ -31,6 +32,7 @@ struct SampleSortTask {
 	// Original data
 	int* data;
 	int size;
+	int K;
 
 	// Samples
 	int* samples;
