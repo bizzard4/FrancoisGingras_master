@@ -20,7 +20,7 @@ IntArrayMsg IntArrayMsg_create(int tag){
 	if(newRec == NULL)
 		FatalError("Cannot allocate memory in IntArrayMsg_create");
 
-	printf("MESSAGE CREATION - Creating intarray msg with tag=%d\n", tag);
+	//printf("MESSAGE CREATION - Creating intarray msg with tag=%d\n", tag);
 	newRec->tag = tag;
 
 	newRec->getTag = getTag;

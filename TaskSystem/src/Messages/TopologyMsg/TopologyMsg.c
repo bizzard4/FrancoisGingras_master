@@ -19,7 +19,7 @@ static TopologyMsg clone(TopologyMsg this){
 	TopologyMsg tmp = TopologyMsg_create(this->tag);
 	tmp->tag = this->tag;
 
-	printf("TopologyMsg - Clone call with tag %d\n", this->tag);
+	//printf("TopologyMsg - Clone call with tag %d\n", this->tag);
 
 	tmp->bucket_count = this->bucket_count;
 	tmp->root_id = this->root_id;

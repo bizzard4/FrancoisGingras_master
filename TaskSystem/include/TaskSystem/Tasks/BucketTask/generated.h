@@ -17,6 +17,8 @@ static void start(BucketTask this);
 
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg);
 static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg);
+static void handle_DoneMsg(BucketTask this, DoneMsg doneMsg);
+static void handle_BarMsg(BucketTask this, BarMsg barMsg);
 
 // The BucketTask "class"
 struct BucketTask {
@@ -25,16 +27,28 @@ struct BucketTask {
 	pthread_t threadRef;
 	int taskID;
 
-	int bucket_count;
+	// Algorithm state
+	int state;
+
+	// Topology information
+	int bucket_count; // K
 	unsigned int* bucket_ids;
 	unsigned int root_id;
-	int sample_size;
-	int data_size;
 
-	int sample_count;
-	int* sample_values;
+	int sample_size; // SN
+	int data_size; // N
 
-	// TODO : Final value, copy
+	// Sample data
+	int* sample_data_values;
+	int sample_data_size;
+
+	// Splitters
+	int* splitters;
+	int splitter_size;
+
+	// Final value, copy
+	int* final_data_values;
+	int final_data_size;
 };
 
 // The BucketTask "constructor"
