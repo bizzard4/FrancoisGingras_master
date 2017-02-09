@@ -46,6 +46,9 @@ static void start(BucketTask this) {
 
 	// Pick sample and send them to root
 	int step = this->sample_size / this->bucket_count;
+	if (step == 0) {
+		step = 1;
+	}
 	int samples[100]; // TODO : Need to be dynamic
 	int count = 0;
 	for (int i = 0; i < this->sample_size; i += step) {
