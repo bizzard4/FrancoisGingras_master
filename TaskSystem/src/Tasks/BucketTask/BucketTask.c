@@ -16,12 +16,12 @@
 // would generated automatically
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
-#define DEBUG_PROPAGATION
+//#define DEBUG_PROPAGATION
 
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
 
-enum {WAITING_ON_SAMPLE_DATA, WAITING_ON_SPLITTERS, WAITING_TO_PROPAGATE, WAITING_ON_DONE, RECEIVED_DONE};
+enum {WAITING_ON_SAMPLE_DATA, WAITING_ON_SPLITTERS, RECEIVED_SPLITTERS, WAITING_ON_DONE, RECEIVED_DONE};
 
 int buckettask_cmpfunc(const void* a, const void* b)
 {
@@ -63,15 +63,9 @@ static void start(BucketTask this) {
 	this->state = WAITING_ON_SPLITTERS;
 	this->final_data_size = 0;
 	this->final_data_values = NULL;
-	receive(this);
-
-	// Notify root that splitters are received and data is ready to propagate
-	DoneMsg splitter_done = DoneMsg_create(DONE_MSG);
-	splitter_done->success = 1;
-	send(this, (Message)splitter_done, this->root_id);
-	splitter_done->destroy(this);
-	this->state = WAITING_TO_PROPAGATE;
-	receive(this); // Get root go
+	while (this->state == WAITING_ON_SPLITTERS) {
+		receive(this);
+	}
 
 	// Propagate data
 	for (int i = 0; i < this->sample_data_size; i++) {
@@ -187,6 +181,7 @@ static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg) {
 		for (int i = 0; i < intarrayMsg->getSize(intarrayMsg); i++) {
 			this->splitters[i] = intarrayMsg->getValue(intarrayMsg, i);
 		}
+		this->state = RECEIVED_SPLITTERS;
 		break;
 	default:
 		printf("BUCKETTASK ERROR : Received intarray at unknown state");
@@ -195,9 +190,7 @@ static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg) {
 
 static void handle_DoneMsg(BucketTask this, DoneMsg doneMsg) {
 	printf("Bucket task %d received done message\n", this->taskID);
-	if (this->state != WAITING_TO_PROPAGATE) {
-		this->state = RECEIVED_DONE;
-	}
+	this->state = RECEIVED_DONE;
 }
 
 static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
@@ -205,13 +198,20 @@ static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
 	printf("Bucket task %d received a value %d\n", this->taskID, barMsg->getValue(barMsg));
 #endif
 
-	// TODO : Inserting sort?
-	this->final_data_size += 1;
-	if (this->final_data_values == NULL) {
-		this->final_data_values = malloc(this->final_data_size * sizeof(int));
+	if (this->state == WAITING_ON_SPLITTERS) { // Received data propagation before 
+#ifdef DEBUG_PROPAGATION
+		printf("Got propagation before splitters, sending message back in the queue\n");
+#endif
+		send(this, (Message)barMsg, this->taskID);
 	} else {
-		this->final_data_values = realloc(this->final_data_values, this->final_data_size * sizeof(int));
+		// TODO : Inserting sort?
+		this->final_data_size += 1;
+		if (this->final_data_values == NULL) {
+			this->final_data_values = malloc(this->final_data_size * sizeof(int));
+		} else {
+			this->final_data_values = realloc(this->final_data_values, this->final_data_size * sizeof(int));
+		}
+		this->final_data_values[this->final_data_size-1] = barMsg->getValue(barMsg);
+		qsort(this->final_data_values, this->final_data_size, sizeof(int), buckettask_cmpfunc);
 	}
-	this->final_data_values[this->final_data_size-1] = barMsg->getValue(barMsg);
-	qsort(this->final_data_values, this->final_data_size, sizeof(int), buckettask_cmpfunc);
 }

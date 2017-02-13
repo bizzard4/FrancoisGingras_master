@@ -127,18 +127,6 @@ static void start(SampleSortTask this) {
 	splitters_msg->destroy(splitters_msg);
 	printf("Done sending splitters\n");
 
-	// Wait on K splitter done signal
-	for (int ki = 0; ki < this->K; ki++) {
-		receive(this);
-	}
-	// Starrt data propagation
-	DoneMsg propagate = DoneMsg_create(DONE_MSG);
-	propagate->success = 1;
-	for (int ki = 0; ki < this->K; ki++) {
-		send(this, (Message)propagate, buckets[ki]);
-	}
-	propagate->destroy(this);
-
 	// Wait on K done signal
 	for (int ki = 0; ki < this->K; ki++) {
 		receive(this);
