@@ -16,12 +16,12 @@
 // would generated automatically
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
-//#define DEBUG_PROPAGATION
+#define DEBUG_PROPAGATION
 
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
 
-enum {WAITING_ON_SAMPLE_DATA, WAITING_ON_SPLITTERS, WAITING_ON_DONE, RECEIVED_DONE};
+enum {WAITING_ON_SAMPLE_DATA, WAITING_ON_SPLITTERS, WAITING_TO_PROPAGATE, WAITING_ON_DONE, RECEIVED_DONE};
 
 int buckettask_cmpfunc(const void* a, const void* b)
 {
@@ -65,6 +65,13 @@ static void start(BucketTask this) {
 	this->final_data_values = NULL;
 	receive(this);
 
+	// Notify root that splitters are received and data is ready to propagate
+	DoneMsg splitter_done = DoneMsg_create(DONE_MSG);
+	splitter_done->success = 1;
+	send(this, (Message)splitter_done, this->root_id);
+	splitter_done->destroy(this);
+	this->state = WAITING_TO_PROPAGATE;
+	receive(this); // Get root go
 
 	// Propagate data
 	for (int i = 0; i < this->sample_data_size; i++) {
@@ -95,6 +102,7 @@ static void start(BucketTask this) {
 	DoneMsg done_msg = DoneMsg_create(DONE_MSG);
 	done_msg->success = 1;
 	send(this, (Message)done_msg, this->root_id);
+	done_msg->destroy(done_msg);
 
 	// Recover final values for this bucket until "done" from root
 	this->state = WAITING_ON_DONE;
@@ -187,7 +195,9 @@ static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg) {
 
 static void handle_DoneMsg(BucketTask this, DoneMsg doneMsg) {
 	printf("Bucket task %d received done message\n", this->taskID);
-	this->state = RECEIVED_DONE;
+	if (this->state != WAITING_TO_PROPAGATE) {
+		this->state = RECEIVED_DONE;
+	}
 }
 
 static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
