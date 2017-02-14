@@ -110,7 +110,6 @@ static void start(BucketTask this) {
 	this->state = WAITING_ON_DONE;
 	while (this->state == WAITING_ON_DONE) {
 		receive(this);
-		sleep(1);
 	}
 
 	// Receive "done" from root and printf final values
@@ -123,6 +122,15 @@ static void start(BucketTask this) {
 	printf("[Large data]");
 #endif
 	printf("\n");
+
+	// Send "done" to root signaling output is complete
+	DoneMsg output_done_msg = DoneMsg_create(DONE_MSG);
+	output_done_msg->success = 1;
+	send(this, (Message)output_done_msg, this->root_id);
+	output_done_msg->destroy(output_done_msg);
+
+	printf("Bucket %d is done\n", this->taskID);
+
 
 	// TODO : Delete topology array
 	// TODO : Delete sample data

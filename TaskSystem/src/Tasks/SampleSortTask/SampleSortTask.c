@@ -151,17 +151,22 @@ static void start(SampleSortTask this) {
 	DoneMsg done_msg = DoneMsg_create(DONE_MSG);
 	done_msg->success = 1;
 	for (int ki = 0; ki < this->K; ki++) {
-		printf("Sending done to %d\n", buckets[ki]);
 		send(this, (Message)done_msg, buckets[ki]);
 	}
 	done_msg->destroy(done_msg);
+
+	// Wait on K done signal
+	printf("Waiting on K output done signal\n");
+	for (int ki = 0; ki < this->K; ki++) {
+		receive(this);
+	}
+
 	printf("Samplesort completed\n");
 
 	// To unlock test case
 	if (errno > 0) {
 		printf("Error number=%d\n", errno);
 	}
-	sleep(1000);
 	done = 1;
 }
 
