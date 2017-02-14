@@ -161,7 +161,7 @@ static void start(SampleSortTask this) {
 	if (errno > 0) {
 		printf("Error number=%d\n", errno);
 	}
-	sleep(3);
+	sleep(1000);
 	done = 1;
 }
 
