@@ -19,6 +19,8 @@ static DoneMsg clone(DoneMsg this){
 	DoneMsg tmp = DoneMsg_create(this->tag);
 	tmp->tag = this->tag;
 
+	tmp->success = this->success;
+
 	return tmp;
 }
 

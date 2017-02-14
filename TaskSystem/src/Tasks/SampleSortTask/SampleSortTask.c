@@ -13,6 +13,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <errno.h>
+
 // this file contains code that the language compiler/runtime
 // would generated automatically
 #include "TaskSystem/Tasks/SampleSortTask/generated.h"
@@ -23,6 +25,8 @@ int done; // For the test case, without any good way to "wait" on a task to be d
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
 
 enum {WAITING_ON_DATA, WAITING_ON_SAMPLES};
+
+#define LARGE_DATA
 
 int samplesorttask_cmpfunc(const void* a, const void* b)
 {
@@ -69,7 +73,9 @@ static void start(SampleSortTask this) {
 		int* data_to_task = malloc(current_size * sizeof(int));
 		for (int i = 0; i < size_per_task; i++) {
 			int val = this->data[current_index+i];
+#ifndef LARGE_DATA
 			printf("%d ", val);
+#endif
 			data_to_task[i] = val;
 		}
 		current_index += size_per_task;
@@ -79,13 +85,18 @@ static void start(SampleSortTask this) {
 				data_to_task = realloc(data_to_task, (current_size+rest) * sizeof(int));
 				for (int i = 0; i < rest; i++) {
 					int val = this->data[current_index+i];
+#ifndef LARGE_DATA
 					printf("%d ", val);
+#endif
 					data_to_task[size_per_task+i] = val;
 				}
 				current_size += rest;
 			}
 
 		}
+#ifdef LARGE_DATA
+		printf("[Large data]");
+#endif
 		printf(" to task %d (size=%d)\n", buckets[ki], current_size);
 		data_msg->setValues(data_msg, current_size, data_to_task);
 		free(data_to_task);
@@ -118,7 +129,7 @@ static void start(SampleSortTask this) {
 		splitters[count] = val;
 		count++;
 	}
-	printf("\n");
+	printf(" (Size=%d) \n", count);
 	IntArrayMsg splitters_msg = IntArrayMsg_create(INTARRAY_MSG);
 	splitters_msg->setValues(splitters_msg, count, splitters);
 	for (int ki = 0; ki < this->K; ki++) {
@@ -140,12 +151,17 @@ static void start(SampleSortTask this) {
 	DoneMsg done_msg = DoneMsg_create(DONE_MSG);
 	done_msg->success = 1;
 	for (int ki = 0; ki < this->K; ki++) {
+		printf("Sending done to %d\n", buckets[ki]);
 		send(this, (Message)done_msg, buckets[ki]);
 	}
 	done_msg->destroy(done_msg);
 	printf("Samplesort completed\n");
 
 	// To unlock test case
+	if (errno > 0) {
+		printf("Error number=%d\n", errno);
+	}
+	sleep(3);
 	done = 1;
 }
 
@@ -207,9 +223,14 @@ static void handle_IntArrayMsg(SampleSortTask this, IntArrayMsg intarrayMsg) {
 		printf("Adding sample : ");
 		for (int i = old_size; i < this->sample_size; i++) {
 			int val = intarrayMsg->getValue(intarrayMsg, i-old_size);
+#ifndef LARGE_DATA
 			printf("%d ", val);
+#endif
 			this->samples[i] = val;
 		}
+#ifdef LARGE_DATA
+		printf("[Large data]");
+#endif
 		printf("\n");
 		break;
 	default:

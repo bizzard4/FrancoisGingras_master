@@ -64,7 +64,8 @@ int main(void) {
 
 	// Without mecanic to wait on a task, we will use this temporary global variable.
 	while (done == 0);
-	sleep(3);
+	printf("Starting done sleep\n");
+	sleep(5);
 
 	// Clean
 	Comm->destroy(Comm);

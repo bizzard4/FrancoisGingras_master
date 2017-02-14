@@ -17,6 +17,7 @@
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
 //#define DEBUG_PROPAGATION
+#define LARGE_DATA
 
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
@@ -39,9 +40,14 @@ static void start(BucketTask this) {
 	// Sort received sample data
 	qsort(this->sample_data_values, this->sample_data_size, sizeof(int), buckettask_cmpfunc);
 	printf("Sorted data : ");
+#ifdef LARGE_DATA
+	printf("[Large data]");
+#else
 	for (int i = 0; i < this->sample_data_size; i++) {
 		printf("%d ", this->sample_data_values[i]);
 	}
+#endif
+
 	printf("\n");
 
 	// Pick sample and send them to root
@@ -68,6 +74,7 @@ static void start(BucketTask this) {
 	}
 
 	// Propagate data
+	printf("Bucket %d start propagating data (size=%d) \n", this->taskID, this->sample_data_size);
 	for (int i = 0; i < this->sample_data_size; i++) {
 		int val = this->sample_data_values[i];
 		for (int si = 1; si < this->splitter_size; si++) {
@@ -91,6 +98,7 @@ static void start(BucketTask this) {
 			}
 		}
 	}
+	printf("Bucket %d done propagating data \n", this->taskID);
 
 	// Send "done" to root
 	DoneMsg done_msg = DoneMsg_create(DONE_MSG);
@@ -102,13 +110,18 @@ static void start(BucketTask this) {
 	this->state = WAITING_ON_DONE;
 	while (this->state == WAITING_ON_DONE) {
 		receive(this);
+		sleep(1);
 	}
 
 	// Receive "done" from root and printf final values
 	printf("Bucket %d final values (count=%d) : ", this->taskID, this->final_data_size);
+#ifndef LARGE_DATA
 	for (int i = 0; i < this->final_data_size; i++) {
 		printf("%d ", this->final_data_values[i]);
 	}
+#else
+	printf("[Large data]");
+#endif
 	printf("\n");
 
 	// TODO : Delete topology array
