@@ -111,6 +111,8 @@ static void start(BucketTask this) {
 	while (this->state == WAITING_ON_DONE) {
 		receive(this);
 	}
+	// Final sorting
+	qsort(this->final_data_values, this->final_data_size, sizeof(int), buckettask_cmpfunc);
 
 	// Receive "done" from root and printf final values
 	printf("Bucket %d final values (count=%d) : ", this->taskID, this->final_data_size);
@@ -225,7 +227,6 @@ static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
 #endif
 		send(this, (Message)barMsg, this->taskID);
 	} else {
-		// TODO : Inserting sort?
 		this->final_data_size += 1;
 		if (this->final_data_values == NULL) {
 			this->final_data_values = malloc(this->final_data_size * sizeof(int));
@@ -233,6 +234,5 @@ static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
 			this->final_data_values = realloc(this->final_data_values, this->final_data_size * sizeof(int));
 		}
 		this->final_data_values[this->final_data_size-1] = barMsg->getValue(barMsg);
-		qsort(this->final_data_values, this->final_data_size, sizeof(int), buckettask_cmpfunc);
 	}
 }
