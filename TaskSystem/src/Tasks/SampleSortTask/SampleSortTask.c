@@ -50,6 +50,7 @@ static void start(SampleSortTask this) {
 	this->state = WAITING_ON_DATA;
 	receive(this);
 	int size_per_task = this->size / this->K;
+	printf("Size per task = %d\n (size=%d, K=%d)", size_per_task, this->size, this->K);
 
 	// Send topology to all K bucket task
 	TopologyMsg topo_msg = TopologyMsg_create(TOPOLOGY_MSG);

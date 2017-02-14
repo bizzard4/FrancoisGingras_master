@@ -47,11 +47,14 @@ int main(void) {
 	printf("Starting samplesort for K=%d and N=%d\n", k, n);
 
 	int temp;
+	int count = 0;
 	int* test_data = malloc(n * sizeof(int));
 	for (int i = 0; i < n; i++) { // Read n values
 		scanf("%d", &temp);
+		count++;
 		test_data[i] = temp;
 	}
+	printf("COUNT = %d\n", count);
 
 
 	// Send test data
