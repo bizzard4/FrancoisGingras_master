@@ -18,9 +18,10 @@ enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
 
 /**
  * Sample sort test case.
+ * K N as parameters
  */
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
 	Comm = System_create();
 	if (Comm == NULL) {
@@ -30,8 +31,7 @@ int main(void) {
 	// Create the samplesort task
 	unsigned int samplesort = SampleSortTask_create();
 
-	int k;
-	scanf("%d", &k);
+	int k = atoi(argv[1]);
 
 
 
@@ -41,20 +41,16 @@ int main(void) {
 	Comm->send((Message)k_msg, samplesort);
 	k_msg->destroy(k_msg);
 
-	int n;
-	scanf("%d", &n);
+	int n = atoi(argv[2]);
 
 	printf("Starting samplesort for K=%d and N=%d\n", k, n);
 
 	int temp;
-	int count = 0;
 	int* test_data = malloc(n * sizeof(int));
 	for (int i = 0; i < n; i++) { // Read n values
 		scanf("%d", &temp);
-		count++;
 		test_data[i] = temp;
 	}
-	printf("COUNT = %d\n", count);
 
 
 	// Send test data
@@ -67,7 +63,6 @@ int main(void) {
 
 	// Without mecanic to wait on a task, we will use this temporary global variable.
 	while (done == 0);
-	sleep(2);
 
 	// Clean
 	Comm->destroy(Comm);
