@@ -6,6 +6,7 @@
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
+#include "TaskSystem/TimeHelper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,8 @@ static void start(BucketTask this) {
 	// Get topology
 	receive(this);
 
+	struct timespec get_sample_start, get_sample_end;
+	clock_gettime(CLOCK_MONOTONIC, &get_sample_start);
 	// Get sample data
 	this->state = WAITING_ON_SAMPLE_DATA;
 	receive(this);
@@ -47,9 +50,11 @@ static void start(BucketTask this) {
 		printf("%d ", this->sample_data_values[i]);
 	}
 #endif
-
 	printf("\n");
+	clock_gettime(CLOCK_MONOTONIC, &get_sample_end);
 
+	struct timespec sample_pick_start, sample_pick_end;
+	clock_gettime(CLOCK_MONOTONIC, &sample_pick_start);
 	// Pick sample and send them to root
 	int step = this->sample_size / this->bucket_count;
 	if (step == 0) {
@@ -64,7 +69,10 @@ static void start(BucketTask this) {
 	IntArrayMsg sample_msg = IntArrayMsg_create(INTARRAY_MSG);
 	sample_msg->setValues(sample_msg, count, samples);
 	send(this, (Message)sample_msg, this->root_id);
+	clock_gettime(CLOCK_MONOTONIC, &sample_pick_end);
 
+	struct timespec get_splitter_start, get_splitter_end;
+	clock_gettime(CLOCK_MONOTONIC, &get_splitter_start);
 	// Get splitters
 	this->state = WAITING_ON_SPLITTERS;
 	this->final_data_size = 0;
@@ -72,7 +80,10 @@ static void start(BucketTask this) {
 	while (this->state == WAITING_ON_SPLITTERS) {
 		receive(this);
 	}
+	clock_gettime(CLOCK_MONOTONIC, &get_splitter_end);
 
+	struct timespec send_data_start, send_data_end;
+	clock_gettime(CLOCK_MONOTONIC, &send_data_start);
 	// Propagate data
 	printf("Bucket %d start propagating data (size=%d) \n", this->taskID, this->sample_data_size);
 	for (int i = 0; i < this->sample_data_size; i++) {
@@ -105,12 +116,19 @@ static void start(BucketTask this) {
 	done_msg->success = 1;
 	send(this, (Message)done_msg, this->root_id);
 	done_msg->destroy(done_msg);
+	clock_gettime(CLOCK_MONOTONIC, &send_data_end);
 
+	struct timespec get_data_start, get_data_end;
+	clock_gettime(CLOCK_MONOTONIC, &get_data_start);
 	// Recover final values for this bucket until "done" from root
 	this->state = WAITING_ON_DONE;
 	while (this->state == WAITING_ON_DONE) {
 		receive(this);
 	}
+	clock_gettime(CLOCK_MONOTONIC, &get_data_end);
+
+	struct timespec finalize_start, finalize_end;
+	clock_gettime(CLOCK_MONOTONIC, &finalize_start);
 	// Final sorting
 	qsort(this->final_data_values, this->final_data_size, sizeof(int), buckettask_cmpfunc);
 
@@ -124,6 +142,26 @@ static void start(BucketTask this) {
 	printf("[Large data]");
 #endif
 	printf("\n");
+	clock_gettime(CLOCK_MONOTONIC, &finalize_end);
+
+	// Display statistics
+	struct timespec get_sample_diff = diff(get_sample_start, get_sample_end);
+	printf("BUCKET TASK %d : Get sample time %lds, %ldms\n",this->taskID, get_sample_diff.tv_sec, get_sample_diff.tv_nsec/1000000);
+
+	struct timespec sample_pick_diff = diff(sample_pick_start, sample_pick_end);
+	printf("BUCKET TASK %d : Time to pick sample %lds, %ldms\n",this->taskID, sample_pick_diff.tv_sec, sample_pick_diff.tv_nsec/1000000);
+
+	struct timespec get_splitter_diff = diff(get_splitter_start, get_splitter_end);
+	printf("BUCKET TASK %d : Waiting on splitter time %lds, %ldms\n",this->taskID, get_splitter_diff.tv_sec, get_splitter_diff.tv_nsec/1000000);
+
+	struct timespec send_data_diff = diff(send_data_start, send_data_end);
+	printf("BUCKET TASK %d : Propagation time %lds, %ldms\n",this->taskID, send_data_diff.tv_sec, send_data_diff.tv_nsec/1000000);
+
+	struct timespec get_data_diff = diff(get_data_start, get_data_end);
+	printf("BUCKET TASK %d : Receiving data time %lds, %ldms\n",this->taskID, get_data_diff.tv_sec, get_data_diff.tv_nsec/1000000);
+
+	struct timespec finalize_diff = diff(finalize_start, finalize_end);
+	printf("BUCKET TASK %d : Displat time %lds, %ldms\n",this->taskID, finalize_diff.tv_sec, finalize_diff.tv_nsec/1000000);
 
 	// Send "done" to root signaling output is complete
 	DoneMsg output_done_msg = DoneMsg_create(DONE_MSG);
@@ -132,6 +170,9 @@ static void start(BucketTask this) {
 	output_done_msg->destroy(output_done_msg);
 
 	printf("Bucket %d is done\n", this->taskID);
+
+
+
 
 
 	// TODO : Delete topology array

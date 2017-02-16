@@ -7,6 +7,7 @@
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
+#include "TaskSystem/TimeHelper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +36,8 @@ int samplesorttask_cmpfunc(const void* a, const void* b)
 
 static void start(SampleSortTask this) {
 
+	struct timespec initialization_start, initialization_end;
+	clock_gettime(CLOCK_MONOTONIC, &initialization_start);
 	// Get the number of buckets
 	receive(this);
 
@@ -63,7 +66,10 @@ static void start(SampleSortTask this) {
 	}
 	topo_msg->destroy(topo_msg);
 	printf("Topology send\n");
+	clock_gettime(CLOCK_MONOTONIC, &initialization_end);
 
+	struct timespec sample_send_start, sample_send_end;
+	clock_gettime(CLOCK_MONOTONIC, &sample_send_start);
 	// Send sample data to all K bucket task
 	int current_index = 0;
 	for (int ki = 0; ki < this->K; ki++) {
@@ -105,8 +111,11 @@ static void start(SampleSortTask this) {
 		data_msg->destroy(data_msg);
 	}
 	printf("Sample data send to bucket\n");
+	clock_gettime(CLOCK_MONOTONIC, &sample_send_end);
 
 
+	struct timespec wait_on_sample_start, wait_on_sample_end;
+	clock_gettime(CLOCK_MONOTONIC, &wait_on_sample_start);
 	// Wait on K samples from bucket task
 	this->state = WAITING_ON_SAMPLES;
 	this->samples = NULL;
@@ -115,7 +124,10 @@ static void start(SampleSortTask this) {
 		receive(this);
 	}
 	printf("Received all samples from buckets\n");
+	clock_gettime(CLOCK_MONOTONIC, &wait_on_sample_end);
 
+	struct timespec splitter_start, splitter_end;
+	clock_gettime(CLOCK_MONOTONIC, &splitter_start);
 	// Sort samples received
 	qsort(this->samples, this->sample_size, sizeof(int), samplesorttask_cmpfunc);
 
@@ -138,7 +150,10 @@ static void start(SampleSortTask this) {
 	}
 	splitters_msg->destroy(splitters_msg);
 	printf("Done sending splitters\n");
+	clock_gettime(CLOCK_MONOTONIC, &splitter_end);
 
+	struct timespec wait_bucket_start, wait_bucket_end;
+	clock_gettime(CLOCK_MONOTONIC, &wait_bucket_start);
 	// Wait on K done signal
 	for (int ki = 0; ki < this->K; ki++) {
 		receive(this);
@@ -161,8 +176,26 @@ static void start(SampleSortTask this) {
 	for (int ki = 0; ki < this->K; ki++) {
 		receive(this);
 	}
+	clock_gettime(CLOCK_MONOTONIC, &wait_bucket_end);
+
+	// Printing timiing
 
 	printf("Samplesort completed\n");
+
+	struct timespec initialization_diff = diff(initialization_start, initialization_end);
+	printf("SAMPLESORT TASK : Initialization time %lds, %ldms\n", initialization_diff.tv_sec, initialization_diff.tv_nsec/1000000);
+
+	struct timespec sample_send_diff = diff(sample_send_start, sample_send_end);
+	printf("SAMPLESORT TASK : Sample sending time %lds, %ldms\n", sample_send_diff.tv_sec, sample_send_diff.tv_nsec/1000000);
+
+	struct timespec wait_on_sample_diff = diff(wait_on_sample_start, wait_on_sample_end);
+	printf("SAMPLESORT TASK : Sample receiving time %lds, %ldms\n", wait_on_sample_diff.tv_sec, wait_on_sample_diff.tv_nsec/1000000);
+
+	struct timespec splitter_diff = diff(splitter_start, splitter_end);
+	printf("SAMPLESORT TASK : Splitter generation time %lds, %ldms\n", splitter_diff.tv_sec, splitter_diff.tv_nsec/1000000);
+
+	struct timespec wait_bucket_diff = diff(wait_bucket_start, wait_bucket_end);
+	printf("SAMPLESORT TASK : Final waiting on bucket time %lds, %ldms\n", wait_bucket_diff.tv_sec, wait_bucket_diff.tv_nsec/1000000);
 
 	// To unlock test case
 	if (errno > 0) {

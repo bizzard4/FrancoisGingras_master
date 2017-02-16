@@ -22,6 +22,7 @@ set(SOURCES
   Tasks/ProducerTask/ProducerTask.c
   Tasks/SampleSortTask/SampleSortTask.c
   Tasks/BucketTask/BucketTask.c
+  TimeHelper.c
 )
 
 add_compile_options(-g)
