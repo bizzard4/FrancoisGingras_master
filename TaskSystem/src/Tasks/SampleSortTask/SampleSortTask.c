@@ -111,6 +111,8 @@ static void start(SampleSortTask this) {
 		data_msg->destroy(data_msg);
 	}
 	printf("Sample data send to bucket\n");
+	// free initial data
+	free(this->data);
 	clock_gettime(CLOCK_MONOTONIC, &sample_send_end);
 
 
@@ -150,6 +152,8 @@ static void start(SampleSortTask this) {
 	}
 	splitters_msg->destroy(splitters_msg);
 	printf("Done sending splitters\n");
+	// free received samples
+	free(this->samples);
 	clock_gettime(CLOCK_MONOTONIC, &splitter_end);
 
 	struct timespec wait_bucket_start, wait_bucket_end;

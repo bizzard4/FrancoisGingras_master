@@ -76,6 +76,7 @@ static void start(BucketTask this) {
 	// Get splitters
 	this->state = WAITING_ON_SPLITTERS;
 	this->final_data_size = 0;
+	this->final_data_capacity = 0;
 	this->final_data_values = NULL;
 	while (this->state == WAITING_ON_SPLITTERS) {
 		receive(this);
@@ -110,6 +111,9 @@ static void start(BucketTask this) {
 		}
 	}
 	printf("Bucket %d done propagating data \n", this->taskID);
+	// Free sample data received and splitters (no more needed)
+	free(this->sample_data_values);
+	free(this->splitters);
 
 	// Send "done" to root
 	DoneMsg done_msg = DoneMsg_create(DONE_MSG);
@@ -170,14 +174,6 @@ static void start(BucketTask this) {
 	output_done_msg->destroy(output_done_msg);
 
 	printf("Bucket %d is done\n", this->taskID);
-
-
-
-
-
-	// TODO : Delete topology array
-	// TODO : Delete sample data
-	// TODO : Delete final result
 }
 
 static void receive(BucketTask this) {
@@ -270,9 +266,14 @@ static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
 	} else {
 		this->final_data_size += 1;
 		if (this->final_data_values == NULL) {
-			this->final_data_values = malloc(this->final_data_size * sizeof(int));
+			// We initially create the array with the sample_size received / 2
+			this->final_data_capacity = this->sample_data_size/2;
+			this->final_data_values = malloc(this->final_data_capacity * sizeof(int));
 		} else {
-			this->final_data_values = realloc(this->final_data_values, this->final_data_size * sizeof(int));
+			if (this->final_data_size == this->final_data_capacity) { // Array full, need to make it bigger
+				this->final_data_capacity = this->final_data_capacity*2;
+				this->final_data_values = realloc(this->final_data_values, this->final_data_capacity * sizeof(int));
+			}
 		}
 		this->final_data_values[this->final_data_size-1] = barMsg->getValue(barMsg);
 	}

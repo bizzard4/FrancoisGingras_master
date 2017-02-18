@@ -48,6 +48,7 @@ struct BucketTask {
 
 	// Final value, copy
 	int* final_data_values;
+	int final_data_capacity; // Store current max val
 	int final_data_size;
 };
 
