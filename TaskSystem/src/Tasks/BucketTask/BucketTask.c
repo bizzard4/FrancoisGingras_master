@@ -30,6 +30,34 @@ int buckettask_cmpfunc(const void* a, const void* b)
    return (*(int*)a - *(int*)b);
 }
 
+static void addValue(BucketTask this, int val) {
+	this->final_data_size += 1;
+	if (this->final_data_values == NULL) {
+		// We initially create the array with the sample_size received / 2
+		this->final_data_capacity = this->sample_data_size/2;
+		this->final_data_values = malloc(this->final_data_capacity * sizeof(int));
+	} else {
+		if (this->final_data_size == this->final_data_capacity) { // Array full, need to make it bigger
+			this->final_data_capacity = this->final_data_capacity*2;
+			this->final_data_values = realloc(this->final_data_values, this->final_data_capacity * sizeof(int));
+		}
+	}
+	this->final_data_values[this->final_data_size-1] = val;
+}
+
+static void sendValueTo(BucketTask this, int val, unsigned int id) {
+	if (id == this->taskID) {
+		addValue(this, val);
+	} else {
+		BarMsg bar_msg = BarMsg_create(BAR_MSG);
+		bar_msg->setValue(bar_msg, val);
+		send(this, (Message)bar_msg, id);
+		bar_msg->destroy(bar_msg);
+	}
+}
+
+
+
 static void start(BucketTask this) {
 	// Get topology
 	receive(this);
@@ -94,19 +122,14 @@ static void start(BucketTask this) {
 #ifdef DEBUG_PROPAGATION
 				printf("Bucket id=%d sending value %d to bucket i=%d\n", this->taskID, val, si-1);
 #endif
-				BarMsg bar_msg = BarMsg_create(BAR_MSG);
-				bar_msg->setValue(bar_msg, val);
-				send(this, (Message)bar_msg, this->bucket_ids[si-1]);
-				bar_msg->destroy(bar_msg);
+				sendValueTo(this, val, this->bucket_ids[si-1]);
 				break;
 			} else if (si == (this->splitter_size-1)) {
 #ifdef DEBUG_PROPAGATION
 				printf("Bucket id=%d sending value %d to bucket i=%d\n", this->taskID, val, si);
 #endif
-				BarMsg bar_msg = BarMsg_create(BAR_MSG);
-				bar_msg->setValue(bar_msg, val);
-				send(this, (Message)bar_msg, this->bucket_ids[si]);
-				bar_msg->destroy(bar_msg);
+				sendValueTo(this, val, this->bucket_ids[si]);
+				break;
 			}
 		}
 	}
@@ -257,24 +280,5 @@ static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
 #ifdef DEBUG_PROPAGATION
 	printf("Bucket task %d received a value %d\n", this->taskID, barMsg->getValue(barMsg));
 #endif
-
-	if (this->state == WAITING_ON_SPLITTERS) { // Received data propagation before 
-#ifdef DEBUG_PROPAGATION
-		printf("Got propagation before splitters, sending message back in the queue\n");
-#endif
-		send(this, (Message)barMsg, this->taskID);
-	} else {
-		this->final_data_size += 1;
-		if (this->final_data_values == NULL) {
-			// We initially create the array with the sample_size received / 2
-			this->final_data_capacity = this->sample_data_size/2;
-			this->final_data_values = malloc(this->final_data_capacity * sizeof(int));
-		} else {
-			if (this->final_data_size == this->final_data_capacity) { // Array full, need to make it bigger
-				this->final_data_capacity = this->final_data_capacity*2;
-				this->final_data_values = realloc(this->final_data_values, this->final_data_capacity * sizeof(int));
-			}
-		}
-		this->final_data_values[this->final_data_size-1] = barMsg->getValue(barMsg);
-	}
+	addValue(this, barMsg->getValue(barMsg));
 }
