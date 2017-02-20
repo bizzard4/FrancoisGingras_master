@@ -21,7 +21,7 @@
 #define LARGE_DATA
 
 // Messages
-enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
+enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, NEW_VALUES_MSG};
 
 enum {WAITING_ON_SAMPLE_DATA, WAITING_ON_SPLITTERS, RECEIVED_SPLITTERS, WAITING_ON_DONE, RECEIVED_DONE};
 
@@ -45,18 +45,62 @@ static void addValue(BucketTask this, int val) {
 	this->final_data_values[this->final_data_size-1] = val;
 }
 
+static void flushReadyData(BucketTask this, unsigned int index) {
+#ifdef DEBUG_PROPAGATION
+	printf("Bucket %d has to flush to %d\n", this->taskID, index+2);
+#endif
+
+	// Skip if count=0
+	if (this->ready_values_count[index] == 0){
+		return;
+	}
+
+	IntArrayMsg flush_values_msg = IntArrayMsg_create(NEW_VALUES_MSG);
+	flush_values_msg->setValues(flush_values_msg, this->ready_values_count[index], this->ready_values[index]);
+	send(this, (Message)flush_values_msg, index+2); // DANGEROUS
+	flush_values_msg->destroy(flush_values_msg);
+
+	free(this->ready_values[index]);
+	this->ready_values_count[index] = 0;
+
+	// Prepare for next
+	this->ready_values[index] = malloc(this->ready_values_max * sizeof(int));
+}
+
 static void sendValueTo(BucketTask this, int val, unsigned int id) {
 	if (id == this->taskID) {
 		addValue(this, val);
 	} else {
-		BarMsg bar_msg = BarMsg_create(BAR_MSG);
-		bar_msg->setValue(bar_msg, val);
-		send(this, (Message)bar_msg, id);
-		bar_msg->destroy(bar_msg);
+		// ID-2 is super dangerous, only work in this program
+		this->ready_values[id-2][0] = val;
+		this->ready_values_count[id-2]++;
+
+		if (this->ready_values_count[id-2] == this->ready_values_max) { // Flush	
+			flushReadyData(this, id-2);
+		}
 	}
 }
 
+// Prepare ararys to propagate data
+static void preparePropagationReadyArrays(BucketTask this) {
+	this->ready_values_max = 1000000; // Constant
+	this->ready_values = malloc(this->bucket_count * sizeof(int*));
+	this->ready_values_count = malloc(this->bucket_count * sizeof(int));
+	for (int i = 0; i < this->bucket_count; i++) {
+		this->ready_values[i] = malloc(this->ready_values_max * sizeof(int));
+		this->ready_values_count[i] = 0;
+	}
+}
 
+// Flush all remaining data
+static void finalizePropagation(BucketTask this) {
+	printf("Bucket %d starting final flushing\n", this->taskID);
+	for (int i = 0; i < this->bucket_count; i++) {
+		flushReadyData(this, i);
+		free(this->ready_values[i]);
+	}
+	free(this->ready_values_count);
+}
 
 static void start(BucketTask this) {
 	// Get topology
@@ -97,6 +141,7 @@ static void start(BucketTask this) {
 	IntArrayMsg sample_msg = IntArrayMsg_create(INTARRAY_MSG);
 	sample_msg->setValues(sample_msg, count, samples);
 	send(this, (Message)sample_msg, this->root_id);
+	sample_msg->destroy(sample_msg);
 	clock_gettime(CLOCK_MONOTONIC, &sample_pick_end);
 
 	struct timespec get_splitter_start, get_splitter_end;
@@ -113,8 +158,10 @@ static void start(BucketTask this) {
 
 	struct timespec send_data_start, send_data_end;
 	clock_gettime(CLOCK_MONOTONIC, &send_data_start);
+
 	// Propagate data
 	printf("Bucket %d start propagating data (size=%d) \n", this->taskID, this->sample_data_size);
+	preparePropagationReadyArrays(this);
 	for (int i = 0; i < this->sample_data_size; i++) {
 		int val = this->sample_data_values[i];
 		for (int si = 1; si < this->splitter_size; si++) {
@@ -133,6 +180,7 @@ static void start(BucketTask this) {
 			}
 		}
 	}
+	finalizePropagation(this);
 	printf("Bucket %d done propagating data \n", this->taskID);
 	// Free sample data received and splitters (no more needed)
 	free(this->sample_data_values);
@@ -223,9 +271,9 @@ static void receive(BucketTask this) {
 		msg = Comm->receive(this->taskID);
 		handle_DoneMsg(this, (DoneMsg)msg);
 		break;
-	case BAR_MSG:
+	case NEW_VALUES_MSG:
 		msg = Comm->receive(this->taskID);
-		handle_BarMsg(this, (BarMsg)msg);
+		handle_NewValuesMsg(this, (IntArrayMsg)msg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
@@ -276,9 +324,11 @@ static void handle_DoneMsg(BucketTask this, DoneMsg doneMsg) {
 	this->state = RECEIVED_DONE;
 }
 
-static void handle_BarMsg(BucketTask this, BarMsg barMsg) {
+static void handle_NewValuesMsg(BucketTask this, IntArrayMsg valuesMsg) {
 #ifdef DEBUG_PROPAGATION
-	printf("Bucket task %d received a value %d\n", this->taskID, barMsg->getValue(barMsg));
+	printf("Bucket task %d received values size=%d\n", this->taskID, valuesMsg->getSize(valuesMsg));
 #endif
-	addValue(this, barMsg->getValue(barMsg));
+	for (int i = 0; i < valuesMsg->getSize(valuesMsg); i++) {
+		addValue(this, valuesMsg->getValue(valuesMsg, i));
+	}
 }

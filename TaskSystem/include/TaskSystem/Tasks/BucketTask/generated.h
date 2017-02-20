@@ -18,7 +18,7 @@ static void start(BucketTask this);
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg);
 static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg);
 static void handle_DoneMsg(BucketTask this, DoneMsg doneMsg);
-static void handle_BarMsg(BucketTask this, BarMsg barMsg);
+static void handle_NewValuesMsg(BucketTask this, IntArrayMsg valuesMsg);
 
 // The BucketTask "class"
 struct BucketTask {
@@ -45,6 +45,11 @@ struct BucketTask {
 	// Splitters
 	int* splitters;
 	int splitter_size;
+
+	// Propagation ready-to-send
+	int** ready_values;
+	int* ready_values_count;
+	int ready_values_max; // Value count before flush
 
 	// Final value, copy
 	int* final_data_values;
