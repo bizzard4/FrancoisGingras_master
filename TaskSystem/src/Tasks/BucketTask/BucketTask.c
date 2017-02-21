@@ -19,6 +19,7 @@
 
 //#define DEBUG_PROPAGATION
 #define LARGE_DATA
+//#define DEBUG_FINAL_VALUE
 
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, NEW_VALUES_MSG};
@@ -215,6 +216,11 @@ static void start(BucketTask this) {
 	}
 #else
 	printf("[Large data]");
+#endif
+#ifdef DEBUG_FINAL_VALUE
+	for (int i = 0; i < this->final_data_size; i++) {
+		printf("FINAL=%d\n", this->final_data_values[i]);
+	}
 #endif
 	printf("\n");
 	clock_gettime(CLOCK_MONOTONIC, &finalize_end);
