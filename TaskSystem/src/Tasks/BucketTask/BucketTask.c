@@ -72,7 +72,7 @@ static void sendValueTo(BucketTask this, int val, unsigned int id) {
 		addValue(this, val);
 	} else {
 		// ID-2 is super dangerous, only work in this program
-		this->ready_values[id-2][0] = val;
+		this->ready_values[id-2][this->ready_values_count[id-2]] = val;
 		this->ready_values_count[id-2]++;
 
 		if (this->ready_values_count[id-2] == this->ready_values_max) { // Flush	
