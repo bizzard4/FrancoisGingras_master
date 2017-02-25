@@ -5,4 +5,6 @@
 
 struct timespec diff(struct timespec start, struct timespec end);
 
+struct  timespec  tsAdd (struct  timespec  time1, struct  timespec  time2);
+
 #endif /* TIMEHELPER_H_ */

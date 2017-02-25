@@ -55,6 +55,10 @@ struct BucketTask {
 	int* final_data_values;
 	int final_data_capacity; // Store current max val
 	int final_data_size;
+
+	// Time accumulator
+	struct timespec send_time_acc;
+	struct timespec receive_wait_acc;
 };
 
 // The BucketTask "constructor"
@@ -83,7 +87,11 @@ static void *run(void *BucketTaskRef){
 }
 
 static void send(BucketTask this, Message data, int targetID){
+	struct timespec send_start, send_end;
+	clock_gettime(CLOCK_MONOTONIC, &send_start);
 	Comm->send(data, targetID);
+	clock_gettime(CLOCK_MONOTONIC, &send_end);
+	this->send_time_acc = tsAdd(this->send_time_acc, diff(send_start, send_end));
 }
 
 #endif /* BUCKETTASK_GENERATED_H_ */

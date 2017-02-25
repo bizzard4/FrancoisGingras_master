@@ -17,20 +17,23 @@
 // would generated automatically
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
-//#define DEBUG_PROPAGATION
-#define LARGE_DATA
-//#define DEBUG_FINAL_VALUE
+//#define DEBUG_PROPAGATION // If set, will output all send/receive values
+#define LARGE_DATA // If set, every dataset will be replaced by [Large data] in output
+//#define DEBUG_FINAL_VALUE // If set, final value of each bucket will be output with "FINAL=" making them easy to parse
 
 // Messages
 enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, NEW_VALUES_MSG};
 
+// States
 enum {WAITING_ON_SAMPLE_DATA, WAITING_ON_SPLITTERS, RECEIVED_SPLITTERS, WAITING_ON_DONE, RECEIVED_DONE};
 
+// qsort compare function
 int buckettask_cmpfunc(const void* a, const void* b)
 {
    return (*(int*)a - *(int*)b);
 }
 
+// Add a final value to this bucket
 static void addValue(BucketTask this, int val) {
 	this->final_data_size += 1;
 	if (this->final_data_values == NULL) {
@@ -39,13 +42,14 @@ static void addValue(BucketTask this, int val) {
 		this->final_data_values = malloc(this->final_data_capacity * sizeof(int));
 	} else {
 		if (this->final_data_size == this->final_data_capacity) { // Array full, need to make it bigger
-			this->final_data_capacity = this->final_data_capacity*2;
+			this->final_data_capacity = this->final_data_capacity*2; // Optimization : double array size and capacity is reached
 			this->final_data_values = realloc(this->final_data_values, this->final_data_capacity * sizeof(int));
 		}
 	}
 	this->final_data_values[this->final_data_size-1] = val;
 }
 
+// Flush ready data to the destination bucket
 static void flushReadyData(BucketTask this, unsigned int index) {
 #ifdef DEBUG_PROPAGATION
 	printf("Bucket %d has to flush to %d\n", this->taskID, index+2);
@@ -58,19 +62,19 @@ static void flushReadyData(BucketTask this, unsigned int index) {
 
 	IntArrayMsg flush_values_msg = IntArrayMsg_create(NEW_VALUES_MSG);
 	flush_values_msg->setValues(flush_values_msg, this->ready_values_count[index], this->ready_values[index]);
-	send(this, (Message)flush_values_msg, index+2); // DANGEROUS
+	send(this, (Message)flush_values_msg, index+2); // DANGEROUS, work only with this code, would need a dictionary
 	flush_values_msg->destroy(flush_values_msg);
 
+	// Prepare for next
 	free(this->ready_values[index]);
 	this->ready_values_count[index] = 0;
-
-	// Prepare for next
 	this->ready_values[index] = malloc(this->ready_values_max * sizeof(int));
 }
 
+// Send value to a destination bucket, flush if necessary
 static void sendValueTo(BucketTask this, int val, unsigned int id) {
 	if (id == this->taskID) {
-		addValue(this, val);
+		addValue(this, val); // Ooptimization, self-propagation, save aournd ~1/4 of propagation messages
 	} else {
 		// ID-2 is super dangerous, only work in this program
 		this->ready_values[id-2][this->ready_values_count[id-2]] = val;
@@ -133,12 +137,13 @@ static void start(BucketTask this) {
 	if (step == 0) {
 		step = 1;
 	}
-	int samples[100]; // TODO : Need to be dynamic
+	int samples[100]; // TODO : Need to be dynamic, work for now
 	int count = 0;
 	for (int i = 0; i < this->sample_size; i += step) {
 		samples[count] = this->sample_data_values[i];
 		count++;
 	}
+	
 	IntArrayMsg sample_msg = IntArrayMsg_create(INTARRAY_MSG);
 	sample_msg->setValues(sample_msg, count, samples);
 	send(this, (Message)sample_msg, this->root_id);
@@ -244,6 +249,10 @@ static void start(BucketTask this) {
 	struct timespec finalize_diff = diff(finalize_start, finalize_end);
 	printf("BUCKET TASK %d : Displat time %lds, %ldms\n",this->taskID, finalize_diff.tv_sec, finalize_diff.tv_nsec/1000000);
 
+	printf("BUCKET TASK %d : Send time accumulator %lds, %ldms\n",this->taskID, this->send_time_acc.tv_sec, this->send_time_acc.tv_nsec/1000000);
+
+	printf("BUCKET TASK %d : Receive waiting accumulator %lds, %ldms\n",this->taskID, this->receive_wait_acc.tv_sec, this->receive_wait_acc.tv_nsec/1000000);
+
 	// Send "done" to root signaling output is complete
 	DoneMsg output_done_msg = DoneMsg_create(DONE_MSG);
 	output_done_msg->success = 1;
@@ -255,9 +264,17 @@ static void start(BucketTask this) {
 
 static void receive(BucketTask this) {
 	int tag = Comm->getMsgTag(this->taskID);
-	while (tag < 0) {
-		tag = Comm->getMsgTag(this->taskID);
+
+	if (tag < 0) { // To accumulate receive time
+		struct timespec recv_start, recv_end;
+		clock_gettime(CLOCK_MONOTONIC, &recv_start);
+		while (tag < 0) { // Loop until message arrive.
+			tag = Comm->getMsgTag(this->taskID);
+		}
+		clock_gettime(CLOCK_MONOTONIC, &recv_end);
+		this->receive_wait_acc = tsAdd(this->receive_wait_acc, diff(recv_start, recv_end));
 	}
+
 
 	Message msg;
 
