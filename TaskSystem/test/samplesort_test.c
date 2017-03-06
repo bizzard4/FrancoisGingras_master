@@ -5,7 +5,7 @@
 #include <time.h>
 
 #include "TaskSystem/Tasks/SampleSortTask/SampleSortTask.h"
-#include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
+#include "TaskSystem/Messages/RefIntArrayMsg/RefIntArrayMsg.h"
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/System.h"
 #include "test_util.h"
@@ -15,8 +15,8 @@ System Comm;
 
 int done = 0; // Global variable for testing purpose
 
-// Messages
-enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
+// Messages (all)
+enum {BAR_MSG, DONE_MSG, INTARRAY_MSG, REF_INTARRAY_MSG, TOPOLOGY_MSG};
 
 /**
  * Sample sort test case.
@@ -63,12 +63,10 @@ int main(int argc, char *argv[]) {
 	k_msg->destroy(k_msg);
 
 	// Send test data
-	IntArrayMsg data_msg = IntArrayMsg_create(INTARRAY_MSG);
-
+	RefIntArrayMsg data_msg = RefIntArrayMsg_create(REF_INTARRAY_MSG);
 	data_msg->setValues(data_msg, n, test_data);
 	Comm->send((Message)data_msg, samplesort);
 	data_msg->destroy(data_msg);
-	free(test_data);
 
 	clock_gettime(CLOCK_MONOTONIC, &create_end);
 

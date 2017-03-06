@@ -15,7 +15,7 @@ static void receive(SampleSortTask this);
 static void *run(void *SampleSortTaskRef);
 static void start(SampleSortTask this);
 
-static void handle_IntArrayMsg(SampleSortTask this, IntArrayMsg intarrayMsg);
+static void handle_RefIntArrayMsg(SampleSortTask this, RefIntArrayMsg refIntArrayMsg);
 static void handle_DoneMsg(SampleSortTask this, DoneMsg doneMsg);
 static void handle_BarMsg(SampleSortTask this, BarMsg barMsg);
 
@@ -26,17 +26,10 @@ struct SampleSortTask {
 	pthread_t threadRef;
 	int taskID;
 
-	// Algorithm state
-	int state;
-
 	// Original data
 	int* data;
 	int size;
 	int K;
-
-	// Samples
-	int* samples;
-	int sample_size;
 };
 
 // The SampleSortTask "constructor"

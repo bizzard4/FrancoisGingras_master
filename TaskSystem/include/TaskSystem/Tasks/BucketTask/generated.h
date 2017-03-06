@@ -16,9 +16,10 @@ static void *run(void *BucketTaskkRef);
 static void start(BucketTask this);
 
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg);
+static void handle_RefIntArrayMsg(BucketTask this, RefIntArrayMsg refintarrayMsg);
 static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg);
-static void handle_DoneMsg(BucketTask this, DoneMsg doneMsg);
-static void handle_NewValuesMsg(BucketTask this, IntArrayMsg valuesMsg);
+
+static void handle_PropagationMsg(BucketTask this, RefIntArrayMsg propagationMsg);
 
 // The BucketTask "class"
 struct BucketTask {
@@ -35,25 +36,21 @@ struct BucketTask {
 	unsigned int* bucket_ids;
 	unsigned int root_id;
 
-	int sample_size; // SN
-	int data_size; // N
-
-	// Sample data
-	int* sample_data_values;
-	int sample_data_size;
+	// Data ref
+	int* data_ref;
+	int data_size;
 
 	// Splitters
 	int* splitters;
 	int splitter_size;
 
-	// Propagation ready-to-send
-	int** ready_values;
-	int* ready_values_count;
-	int ready_values_max; // Value count before flush
+	// Propagated messages
+	int** propagated_messages;
+	int* propagated_messages_counts;
+	int propagated_messages_current;
 
 	// Final value, copy
 	int* final_data_values;
-	int final_data_capacity; // Store current max val
 	int final_data_size;
 
 	// Time accumulator

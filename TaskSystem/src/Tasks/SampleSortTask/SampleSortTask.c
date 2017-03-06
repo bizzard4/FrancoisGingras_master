@@ -3,6 +3,7 @@
 #include "TaskSystem/Messages/Message.h"
 #include "TaskSystem/Messages/TopologyMsg/TopologyMsg.h"
 #include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
+#include "TaskSystem/Messages/RefIntArrayMsg/RefIntArrayMsg.h"
 #include "TaskSystem/Messages/DoneMsg/DoneMsg.h"
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/System.h"
@@ -22,10 +23,8 @@
 
 int done; // For the test case, without any good way to "wait" on a task to be done, we will use that.
 
-// Messages
-enum {TOPOLOGY_MSG, INTARRAY_MSG, DONE_MSG, BAR_MSG};
-
-enum {WAITING_ON_DATA, WAITING_ON_SAMPLES};
+// Messages (all)
+enum {BAR_MSG, DONE_MSG, INTARRAY_MSG, REF_INTARRAY_MSG, TOPOLOGY_MSG};
 
 #define LARGE_DATA
 
@@ -34,26 +33,64 @@ int samplesorttask_cmpfunc(const void* a, const void* b)
    return (*(int*)a - *(int*)b);
 }
 
+// Assumes 0 <= max <= RAND_MAX
+// Returns in the closed interval [0, max]
+// Reference : http://stackoverflow.com/questions/2509679/how-to-generate-a-random-number-from-within-a-range
+long random_at_most(long max) {
+  unsigned long
+    // max <= RAND_MAX < ULONG_MAX, so this is okay.
+    num_bins = (unsigned long) max + 1,
+    num_rand = (unsigned long) RAND_MAX + 1,
+    bin_size = num_rand / num_bins,
+    defect   = num_rand % num_bins;
+
+  long x;
+  do {
+   x = random();
+  }
+  // This is carefully written not to overflow
+  while (num_rand - defect <= (unsigned long)x);
+
+  // Truncated division is intentional
+  return x/bin_size;
+}
+
 static void start(SampleSortTask this) {
 
+	// Get the number of buckets
 	struct timespec initialization_start, initialization_end;
 	clock_gettime(CLOCK_MONOTONIC, &initialization_start);
-	// Get the number of buckets
 	receive(this);
 
-	// Create K bucket task
-	unsigned int buckets[this->K];
+	// Get the data to sort
+	receive(this);
+	int size_per_task = this->size / this->K;
+	printf("Size per task = %d (N=%d, K=%d) \n", size_per_task, this->size, this->K);
+	clock_gettime(CLOCK_MONOTONIC, &initialization_end);
 
+	// Gather random sample and prepare splitters
+	struct timespec random_start, random_end;
+	clock_gettime(CLOCK_MONOTONIC, &random_start);
+	int splitters[this->K];
+	printf("Splitter : ");
+	srand(time(NULL));
+	for (int i = 0; i < (this->K); i++) {
+		long val = random_at_most(this->size-1);
+		splitters[i] = this->data[val];
+		printf("(i=%ld,v=%d) ", val, splitters[i]);
+	}
+	printf("\n");
+	qsort(splitters, this->K, sizeof(int), samplesorttask_cmpfunc);
+	clock_gettime(CLOCK_MONOTONIC, &random_end);
+
+	// Create K bucket task
+	struct timespec bucket_spawn_start, bucket_spawn_end;
+	clock_gettime(CLOCK_MONOTONIC, &bucket_spawn_start);
+	unsigned int buckets[this->K];
 	for(int i = 0; i < this->K; i++) {
 		buckets[i] = BucketTask_create();
 	}
 	printf("Bucket tasks created\n");
-
-	// Get the data to sort
-	this->state = WAITING_ON_DATA;
-	receive(this);
-	int size_per_task = this->size / this->K;
-	printf("Size per task = %d\n (size=%d, K=%d)", size_per_task, this->size, this->K);
 
 	// Send topology to all K bucket task
 	TopologyMsg topo_msg = TopologyMsg_create(TOPOLOGY_MSG);
@@ -66,137 +103,50 @@ static void start(SampleSortTask this) {
 	}
 	topo_msg->destroy(topo_msg);
 	printf("Topology send\n");
-	clock_gettime(CLOCK_MONOTONIC, &initialization_end);
 
-	struct timespec sample_send_start, sample_send_end;
-	clock_gettime(CLOCK_MONOTONIC, &sample_send_start);
-	// Send sample data to all K bucket task
-	int current_index = 0;
+	// Send ref of data to K buckets
+	int current = 0;
 	for (int ki = 0; ki < this->K; ki++) {
-		IntArrayMsg data_msg = IntArrayMsg_create(INTARRAY_MSG);
-
-		printf("Sending sample data=");
-		int current_size = size_per_task;
-		int* data_to_task = malloc(current_size * sizeof(int));
-		for (int i = 0; i < size_per_task; i++) {
-			int val = this->data[current_index+i];
-#ifndef LARGE_DATA
-			printf("%d ", val);
-#endif
-			data_to_task[i] = val;
+		RefIntArrayMsg data_msg = RefIntArrayMsg_create(REF_INTARRAY_MSG);
+		if (ki < (this->K-1)) {
+			data_msg->setValues(data_msg, size_per_task, &this->data[current]);
+		} else { // Last one have the rest
+			data_msg->setValues(data_msg, this->size-current, &this->data[current]);
 		}
-		current_index += size_per_task;
-		if (ki==(this->K-1)) { // Need to happend the last part of the array to the end
-			int rest = this->size - current_index;
-			if (rest > 0) {
-				data_to_task = realloc(data_to_task, (current_size+rest) * sizeof(int));
-				for (int i = 0; i < rest; i++) {
-					int val = this->data[current_index+i];
-#ifndef LARGE_DATA
-					printf("%d ", val);
-#endif
-					data_to_task[size_per_task+i] = val;
-				}
-				current_size += rest;
-			}
-
-		}
-#ifdef LARGE_DATA
-		printf("[Large data]");
-#endif
-		printf(" to task %d (size=%d)\n", buckets[ki], current_size);
-		data_msg->setValues(data_msg, current_size, data_to_task);
-		free(data_to_task);
 		send(this, (Message)data_msg, buckets[ki]);
-		data_msg->destroy(data_msg);
+		data_msg->destroy(data_msg);	
+		current += size_per_task;
 	}
-	printf("Sample data send to bucket\n");
-	// free initial data
-	free(this->data);
-	clock_gettime(CLOCK_MONOTONIC, &sample_send_end);
 
-
-	struct timespec wait_on_sample_start, wait_on_sample_end;
-	clock_gettime(CLOCK_MONOTONIC, &wait_on_sample_start);
-	// Wait on K samples from bucket task
-	this->state = WAITING_ON_SAMPLES;
-	this->samples = NULL;
-	this->sample_size = 0;
-	for (int ki = 0; ki < this->K; ki++) {
-		receive(this);
-	}
-	printf("Received all samples from buckets\n");
-	clock_gettime(CLOCK_MONOTONIC, &wait_on_sample_end);
-
-	struct timespec splitter_start, splitter_end;
-	clock_gettime(CLOCK_MONOTONIC, &splitter_start);
-	// Sort samples received
-	qsort(this->samples, this->sample_size, sizeof(int), samplesorttask_cmpfunc);
-
-	// Compute and send splitters information
-	int step = this->sample_size / this->K;
-	int splitters[100]; // TODO : Dynamic this
-	int count = 0;
-	printf("Splitters : ");
-	for (int ni = 0; ni < this->sample_size; ni += step) {
-		int val = this->samples[ni];
-		printf("%d ", val);
-		splitters[count] = val;
-		count++;
-	}
-	printf(" (Size=%d) \n", count);
+	// Send splitters to K buckets
 	IntArrayMsg splitters_msg = IntArrayMsg_create(INTARRAY_MSG);
-	splitters_msg->setValues(splitters_msg, count, splitters);
+	splitters_msg->setValues(splitters_msg, this->K, splitters);
 	for (int ki = 0; ki < this->K; ki++) {
 		send(this, (Message)splitters_msg, buckets[ki]);
 	}
 	splitters_msg->destroy(splitters_msg);
-	printf("Done sending splitters\n");
-	// free received samples
-	free(this->samples);
-	clock_gettime(CLOCK_MONOTONIC, &splitter_end);
+	clock_gettime(CLOCK_MONOTONIC, &bucket_spawn_end);
 
+	// Wait on K done messages, this signal that a bucket is done
 	struct timespec wait_bucket_start, wait_bucket_end;
 	clock_gettime(CLOCK_MONOTONIC, &wait_bucket_start);
-	// Wait on K done signal
 	for (int ki = 0; ki < this->K; ki++) {
 		receive(this);
 	}
 	printf("Received all bucket done messaage\n");
-
-	// TODO : This part, depending on how the data is store may be needed
-	// Gather result (Each bucket will print final result at "done" reception")
-
-	// Send done signal to destroy task
-	DoneMsg done_msg = DoneMsg_create(DONE_MSG);
-	done_msg->success = 1;
-	for (int ki = 0; ki < this->K; ki++) {
-		send(this, (Message)done_msg, buckets[ki]);
-	}
-	done_msg->destroy(done_msg);
-
-	// Wait on K done signal
-	printf("Waiting on K output done signal\n");
-	for (int ki = 0; ki < this->K; ki++) {
-		receive(this);
-	}
 	clock_gettime(CLOCK_MONOTONIC, &wait_bucket_end);
 
 	// Printing timiing
-
 	printf("Samplesort completed\n");
 
 	struct timespec initialization_diff = diff(initialization_start, initialization_end);
 	printf("SAMPLESORT TASK : Initialization time %lds, %ldms\n", initialization_diff.tv_sec, initialization_diff.tv_nsec/1000000);
 
-	struct timespec sample_send_diff = diff(sample_send_start, sample_send_end);
-	printf("SAMPLESORT TASK : Sample sending time %lds, %ldms\n", sample_send_diff.tv_sec, sample_send_diff.tv_nsec/1000000);
+	struct timespec random_diff = diff(random_start, random_end);
+	printf("SAMPLESORT TASK : Sample random sampling time %lds, %ldms\n", random_diff.tv_sec, random_diff.tv_nsec/1000000);
 
-	struct timespec wait_on_sample_diff = diff(wait_on_sample_start, wait_on_sample_end);
-	printf("SAMPLESORT TASK : Sample receiving time %lds, %ldms\n", wait_on_sample_diff.tv_sec, wait_on_sample_diff.tv_nsec/1000000);
-
-	struct timespec splitter_diff = diff(splitter_start, splitter_end);
-	printf("SAMPLESORT TASK : Splitter generation time %lds, %ldms\n", splitter_diff.tv_sec, splitter_diff.tv_nsec/1000000);
+	struct timespec bucket_spawn_diff = diff(bucket_spawn_start, bucket_spawn_end);
+	printf("SAMPLESORT TASK : Sample bucket spawn time %lds, %ldms\n", bucket_spawn_diff.tv_sec, bucket_spawn_diff.tv_nsec/1000000);
 
 	struct timespec wait_bucket_diff = diff(wait_bucket_start, wait_bucket_end);
 	printf("SAMPLESORT TASK : Final waiting on bucket time %lds, %ldms\n", wait_bucket_diff.tv_sec, wait_bucket_diff.tv_nsec/1000000);
@@ -218,10 +168,6 @@ static void receive(SampleSortTask this) {
 
 	// match the message to the right message "handler"
 	switch (tag) {
-	case INTARRAY_MSG :
-		msg = Comm->receive(this->taskID);
-		handle_IntArrayMsg(this, (IntArrayMsg)msg);
-		break;
 	case DONE_MSG:
 		msg = Comm->receive(this->taskID);
 		handle_DoneMsg(this, (DoneMsg)msg);
@@ -230,54 +176,13 @@ static void receive(SampleSortTask this) {
 		msg = Comm->receive(this->taskID);
 		handle_BarMsg(this, (BarMsg)msg);
 		break;
+	case REF_INTARRAY_MSG:
+		msg = Comm->receive(this->taskID);
+		handle_RefIntArrayMsg(this, (RefIntArrayMsg)msg);
+		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
 		Comm->dropMsg(this->taskID);
-	}
-}
-
-static void handle_IntArrayMsg(SampleSortTask this, IntArrayMsg intarrayMsg) {
-
-	switch(this->state) {
-	case WAITING_ON_DATA:
-		printf("Samplesort task id %d received initial data\n", this->taskID);
-
-		this->size = intarrayMsg->getSize(intarrayMsg);
-
-		// Deep copy message
-		this->data = malloc(intarrayMsg->getSize(intarrayMsg) * sizeof(int));
-		for (int i = 0; i < intarrayMsg->getSize(intarrayMsg); i++) {
-			this->data[i] = intarrayMsg->getValue(intarrayMsg, i);
-		}
-		break;
-	case WAITING_ON_SAMPLES:
-		printf("Samplesort task id %d received sample\n", this->taskID);
-
-		int old_size = this->sample_size;
-		this->sample_size += intarrayMsg->getSize(intarrayMsg);
-
-		if (this->samples == NULL) {
-			this->samples = malloc(this->sample_size * sizeof(int));
-		} else {
-			this->samples = realloc(this->samples, this->sample_size * sizeof(int));
-		}
-
-		// Add new values (deep copy)
-		printf("Adding sample : ");
-		for (int i = old_size; i < this->sample_size; i++) {
-			int val = intarrayMsg->getValue(intarrayMsg, i-old_size);
-#ifndef LARGE_DATA
-			printf("%d ", val);
-#endif
-			this->samples[i] = val;
-		}
-#ifdef LARGE_DATA
-		printf("[Large data]");
-#endif
-		printf("\n");
-		break;
-	default:
-		printf("SAMPLESORTTASK ERROR : Received intarray at unknown state");
 	}
 }
 
@@ -288,4 +193,10 @@ static void handle_DoneMsg(SampleSortTask this, DoneMsg doneMsg) {
 static void handle_BarMsg(SampleSortTask this, BarMsg barMsg) {
 	printf("Samplesort task id %d received K\n", this->taskID);
 	this->K = barMsg->getValue(barMsg);
+}
+
+static void handle_RefIntArrayMsg(SampleSortTask this, RefIntArrayMsg refIntArrayMsg) {
+	printf("Samplesort task id %d received initial data\n", this->taskID);
+	this->size = refIntArrayMsg->getSize(refIntArrayMsg);
+	this->data = refIntArrayMsg->values;
 }
