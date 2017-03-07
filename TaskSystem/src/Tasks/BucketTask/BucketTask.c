@@ -19,6 +19,9 @@
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
 //#define DEBUG_DATA // If set, bucket will display all data 
+#define DEBUG_OUTPUT // Is set, the ouput will be formated to be easily formatable, warning, this affect performance.
+
+// To use validate_result script, set DEBUG_OUTPUT, but unset DEBUG_DATA
 
 // Messages (all)
 enum {BAR_MSG, DONE_MSG, INTARRAY_MSG, REF_INTARRAY_MSG, TOPOLOGY_MSG, PROPAGATION_MSG};
@@ -33,6 +36,8 @@ int buckettask_cmpfunc(const void* a, const void* b)
 }
 
 static void start(BucketTask this) {
+	printf("Bucket %d starting\n", this->taskID);
+
 	this->state = GET_TOPO;
 
 	// Get topology
@@ -177,6 +182,11 @@ static void start(BucketTask this) {
 	}
 	printf("\n");
 #endif
+#ifdef DEBUG_OUTPUT // To use with validate_result script
+	for (int i = 0; i < this->final_data_size; i++) {
+		printf("BUCKET=%d VALUE=%d\n", this->taskID, this->final_data_values[i]);
+	}
+#endif
 	
 
 	// Display statistics
@@ -250,7 +260,7 @@ static void receive(BucketTask this) {
 }
 
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg) {
-	printf("Bucket task %d received topology\n", this->taskID);
+	printf("Bucket %d received topology\n", this->taskID);
 	this->bucket_count = topologyMsg->bucket_count; // K
 	this->bucket_ids = malloc(topologyMsg->bucket_count * sizeof(unsigned int));
 	for (int i = 0; i < topologyMsg->bucket_count; i++) {
@@ -262,7 +272,7 @@ static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg) {
 }
 
 static void handle_RefIntArrayMsg(BucketTask this, RefIntArrayMsg refintarrayMsg) {
-	printf("Bucket task %d received reference to data\n", this->taskID);
+	printf("Bucket %d received reference to data\n", this->taskID);
 	this->data_size = refintarrayMsg->getSize(refintarrayMsg);
 	this->data_ref = refintarrayMsg->values;
 
@@ -270,7 +280,7 @@ static void handle_RefIntArrayMsg(BucketTask this, RefIntArrayMsg refintarrayMsg
 }
 
 static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg) {
-	printf("Bucket task %d received splitters\n", this->taskID);
+	printf("Bucket %d received splitters\n", this->taskID);
 	this->splitter_size = intarrayMsg->getSize(intarrayMsg);
 	this->splitters = malloc(intarrayMsg->getSize(intarrayMsg) * sizeof(int));
 	for (int i = 0; i < intarrayMsg->getSize(intarrayMsg); i++) {
@@ -288,9 +298,9 @@ static void handle_PropagationMsg(BucketTask this, RefIntArrayMsg propagationMsg
 	}
 
 	// Keep pointers and counts
-	printf("Bucket task %d received propagation message (size=%d) \n", this->taskID, propagationMsg->size);
+	printf("Bucket %d received propagation message (size=%d) \n", this->taskID, propagationMsg->size);
 #ifdef DEBUG_DATA
-	printf("Bucket task %d propagation values : ", this->taskID);
+	printf("Bucket %d propagation values : ", this->taskID);
 	for (int i = 0; i < propagationMsg->size; i++) {
 		printf("%d ", propagationMsg->values[i]);
 	}

@@ -56,7 +56,6 @@ long random_at_most(long max) {
 }
 
 static void start(SampleSortTask this) {
-
 	// Get the number of buckets
 	struct timespec initialization_start, initialization_end;
 	clock_gettime(CLOCK_MONOTONIC, &initialization_start);
