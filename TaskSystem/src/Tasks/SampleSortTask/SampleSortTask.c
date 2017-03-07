@@ -139,16 +139,16 @@ static void start(SampleSortTask this) {
 	printf("Samplesort completed\n");
 
 	struct timespec initialization_diff = diff(initialization_start, initialization_end);
-	printf("SAMPLESORT TASK : Initialization time %lds, %ldms\n", initialization_diff.tv_sec, initialization_diff.tv_nsec/1000000);
+	printf("TIMING-SAMPLESORT %lds,%ldms - Initialization time \n", initialization_diff.tv_sec, initialization_diff.tv_nsec/1000000);
 
 	struct timespec random_diff = diff(random_start, random_end);
-	printf("SAMPLESORT TASK : Sample random sampling time %lds, %ldms\n", random_diff.tv_sec, random_diff.tv_nsec/1000000);
+	printf("TIMING-SAMPLESORT %lds,%ldms - Sample random sampling time \n", random_diff.tv_sec, random_diff.tv_nsec/1000000);
 
 	struct timespec bucket_spawn_diff = diff(bucket_spawn_start, bucket_spawn_end);
-	printf("SAMPLESORT TASK : Sample bucket spawn time %lds, %ldms\n", bucket_spawn_diff.tv_sec, bucket_spawn_diff.tv_nsec/1000000);
+	printf("TIMING-SAMPLESORT %lds,%ldms - Sample bucket spawn time \n", bucket_spawn_diff.tv_sec, bucket_spawn_diff.tv_nsec/1000000);
 
 	struct timespec wait_bucket_diff = diff(wait_bucket_start, wait_bucket_end);
-	printf("SAMPLESORT TASK : Final waiting on bucket time %lds, %ldms\n", wait_bucket_diff.tv_sec, wait_bucket_diff.tv_nsec/1000000);
+	printf("TIMING-SAMPLESORT %lds,%ldms - Final waiting on bucket time \n", wait_bucket_diff.tv_sec, wait_bucket_diff.tv_nsec/1000000);
 
 	// To unlock test case
 	if (errno > 0) {

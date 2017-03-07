@@ -19,7 +19,7 @@
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
 //#define DEBUG_DATA // If set, bucket will display all data 
-#define DEBUG_OUTPUT // Is set, the ouput will be formated to be easily formatable, warning, this affect performance.
+//#define DEBUG_OUTPUT // Is set, the ouput will be formated to be easily formatable, warning, this affect performance.
 
 // To use validate_result script, set DEBUG_OUTPUT, but unset DEBUG_DATA
 
@@ -191,25 +191,25 @@ static void start(BucketTask this) {
 
 	// Display statistics
 	struct timespec get_sample_diff = diff(get_sample_start, get_sample_end);
-	printf("BUCKET TASK %d : Get sample time %lds, %ldms\n",this->taskID, get_sample_diff.tv_sec, get_sample_diff.tv_nsec/1000000);
+	printf("TIMING-BUCKET %d %lds,%ldms - Get sample time\n",this->taskID, get_sample_diff.tv_sec, get_sample_diff.tv_nsec/1000000);
 
 	struct timespec get_splitter_diff = diff(get_splitter_start, get_splitter_end);
-	printf("BUCKET TASK %d : Waiting on splitter time %lds, %ldms\n",this->taskID, get_splitter_diff.tv_sec, get_splitter_diff.tv_nsec/1000000);
+	printf("TIMING-BUCKET %d %lds,%ldms - Waiting on splitter time\n",this->taskID, get_splitter_diff.tv_sec, get_splitter_diff.tv_nsec/1000000);
 
 	struct timespec propagate_diff = diff(propagate_start, propagate_end);
-	printf("BUCKET TASK %d : Propagation time %lds, %ldms\n",this->taskID, propagate_diff.tv_sec, propagate_diff.tv_nsec/1000000);
+	printf("TIMING-BUCKET %d %lds,%ldms - Propagation time\n",this->taskID, propagate_diff.tv_sec, propagate_diff.tv_nsec/1000000);
 
 	struct timespec rebuild_diff = diff(rebuild_start, rebuild_end);
-	printf("BUCKET TASK %d : Rebuild array time %lds, %ldms\n",this->taskID, rebuild_diff.tv_sec, rebuild_diff.tv_nsec/1000000);
+	printf("TIMING-BUCKET %d %lds,%ldms - Rebuild array time\n",this->taskID, rebuild_diff.tv_sec, rebuild_diff.tv_nsec/1000000);
 
 	struct timespec finalize_diff = diff(finalize_start, finalize_end);
-	printf("BUCKET TASK %d : Final sorting time %lds, %ldms\n",this->taskID, finalize_diff.tv_sec, finalize_diff.tv_nsec/1000000);
+	printf("TIMING-BUCKET %d %lds,%ldms - Final sorting time\n",this->taskID, finalize_diff.tv_sec, finalize_diff.tv_nsec/1000000);
 
-	printf("BUCKET TASK %d : Send time accumulator %lds, %ldms\n",this->taskID, this->send_time_acc.tv_sec, this->send_time_acc.tv_nsec/1000000);
+	printf("TIMING-BUCKET %d %lds,%ldms - Send time accumulator\n",this->taskID, this->send_time_acc.tv_sec, this->send_time_acc.tv_nsec/1000000);
 
-	printf("BUCKET TASK %d : Receive waiting accumulator %lds, %ldms\n",this->taskID, this->receive_wait_acc.tv_sec, this->receive_wait_acc.tv_nsec/1000000);
+	printf("TIMING-BUCKET %d %lds,%ldms - Receive waiting accumulator\n",this->taskID, this->receive_wait_acc.tv_sec, this->receive_wait_acc.tv_nsec/1000000);
 
-	printf("BUCKET TASK %d : Reveived %d values\n", this->taskID, this->final_data_size);
+	printf("TIMING-BUCKET %d %d - Reveived values\n", this->taskID, this->final_data_size);
 
 	// Send "done" to root signaling output is complete
 	DoneMsg output_done_msg = DoneMsg_create(DONE_MSG);

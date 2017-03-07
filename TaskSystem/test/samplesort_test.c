@@ -80,12 +80,12 @@ int main(int argc, char *argv[]) {
 	Comm->destroy(Comm);
 
 	struct timespec read_diff = diff(read_start, read_end);
-	printf("TEST : Read time %lds, %ldms\n", read_diff.tv_sec, read_diff.tv_nsec/1000000);
+	printf("TIMING-TEST %lds,%ldms - Read time\n", read_diff.tv_sec, read_diff.tv_nsec/1000000);
 
 	struct timespec create_diff = diff(create_end, create_end);
-	printf("TEST : Task initialization time %lds, %ldms\n", create_diff.tv_sec, create_diff.tv_nsec/1000000);  
+	printf("TIMING-TEST %lds,%ldms - Task initialization time\n", create_diff.tv_sec, create_diff.tv_nsec/1000000);  
 
 	struct timespec wait_diff = diff(wait_start, wait_end);
-	printf("TEST : Task wait on done time %lds, %ldms\n", wait_diff.tv_sec, wait_diff.tv_nsec/1000000); 
+	printf("TIMING-TEST %lds,%ldms - Task wait on done time\n", wait_diff.tv_sec, wait_diff.tv_nsec/1000000); 
 	return EXIT_SUCCESS;
 }
