@@ -16,7 +16,21 @@ System Comm;
 int done = 0; // Global variable for testing purpose
 
 // Messages (all)
-enum {BAR_MSG, DONE_MSG, INTARRAY_MSG, REF_INTARRAY_MSG, TOPOLOGY_MSG};
+enum {
+	// Pre-phase
+	BAR_MSG, 
+	REF_INTARRAY_MSG,
+	// Phase 1 
+	TOPOLOGY_MSG, // topology msg
+	DATA_REF_MSG, // int ref array message
+	SPLITTER_MSG, // int array message
+	// Phase 2
+	GET_SUB_ARRAY_MSG, // done message (signal)
+	SUB_ARRAT_MSG, // 2 dimension ref int array message
+	// Phase 3
+	SET_SUB_ARRAY_MSG, // 2 dimension ref int array message
+	DONE_MSG // done message (singla)
+};
 
 /**
  * Sample sort test case.

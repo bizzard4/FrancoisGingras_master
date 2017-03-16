@@ -2,7 +2,8 @@
 #include "TaskSystem/Messages/Message.h"
 #include "TaskSystem/Messages/TopologyMsg/TopologyMsg.h"
 #include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h" 
-#include "TaskSystem/Messages/RefIntArrayMsg/RefIntArrayMsg.h" 
+#include "TaskSystem/Messages/RefIntArrayMsg/RefIntArrayMsg.h"
+#include "TaskSystem/Messages/RefTwoDimIntArrayMsg/RefTwoDimIntArrayMsg.h"
 #include "TaskSystem/Messages/DoneMsg/DoneMsg.h"
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/System.h"
@@ -24,10 +25,21 @@
 // To use validate_result script, set DEBUG_OUTPUT, but unset DEBUG_DATA
 
 // Messages (all)
-enum {BAR_MSG, DONE_MSG, INTARRAY_MSG, REF_INTARRAY_MSG, TOPOLOGY_MSG, PROPAGATION_MSG};
-
-// States
-enum {GET_TOPO, GET_DATA, GET_SPLITTERS, PROPAGATION};
+enum {
+	// Pre-phase
+	BAR_MSG, 
+	REF_INTARRAY_MSG,
+	// Phase 1 
+	TOPOLOGY_MSG, // topology msg
+	DATA_REF_MSG, // int ref array message
+	SPLITTER_MSG, // int array message
+	// Phase 2
+	GET_SUB_ARRAY_MSG, // done message (signal)
+	SUB_ARRAT_MSG, // 2 dimension ref int array message
+	// Phase 3
+	SET_SUB_ARRAY_MSG, // 2 dimension ref int array message
+	DONE_MSG // done message (singla)
+};
 
 // qsort compare function
 int buckettask_cmpfunc(const void* a, const void* b)
@@ -38,19 +50,17 @@ int buckettask_cmpfunc(const void* a, const void* b)
 static void start(BucketTask this) {
 	printf("Bucket %d starting\n", this->taskID);
 
-	this->state = GET_TOPO;
+	// ----------------------------------
+	// Round 1) - Get topology, data reference and splitters
+	// ----------------------------------
 
 	// Get topology
-	while (this->state == GET_TOPO) {
-		receive(this);
-	}
+	receive(this);
 
 	// Get ref to data
 	struct timespec get_sample_start, get_sample_end;
 	clock_gettime(CLOCK_MONOTONIC, &get_sample_start);
-	while (this->state == GET_DATA) {
-		receive(this);
-	}
+	receive(this);
 #ifdef DEBUG_DATA
 	printf("Bucket %d data (size=%d) : ", this->taskID, this->data_size);
 	for (int i = 0; i < this->data_size; i++) {
@@ -63,9 +73,7 @@ static void start(BucketTask this) {
 	// Get splitters
 	struct timespec get_splitter_start, get_splitter_end;
 	clock_gettime(CLOCK_MONOTONIC, &get_splitter_start);
-	while (this->state == GET_SPLITTERS) {
-		receive(this);
-	}
+	receive(this);
 #ifdef DEBUG_DATA
 	printf("Bucket %d splitters=", this->taskID);
 	for (int i = 0; i < this->splitter_size; i++) {
@@ -75,11 +83,18 @@ static void start(BucketTask this) {
 #endif
 	clock_gettime(CLOCK_MONOTONIC, &get_splitter_end);
 
+	// ----------------------------------
+	// Round 2) - Create sub-array
+	// ----------------------------------
+
+	// Get command to start computing sub array
+	receive(this);
+
 	// Pick values to send to others
 	struct timespec propagate_start, propagate_end;
 	clock_gettime(CLOCK_MONOTONIC, &propagate_start);
 
-	// 1) get count
+ 	// 1) get count
 	int counts[this->bucket_count];
 	for (int i = 0; i < this->bucket_count; i++) {
 		counts[i] = 0;
@@ -137,36 +152,21 @@ static void start(BucketTask this) {
 	printf("\n");
 #endif
 
-	// 3) send ref to other buckets
-	for (int i = 0; i < this->bucket_count; i++) {
-		RefIntArrayMsg data_msg = RefIntArrayMsg_create(PROPAGATION_MSG);
-		data_msg->setValues(data_msg, counts[i], values_to_propagate[i]);
-		send(this, (Message)data_msg, this->bucket_ids[i]); // Dangerous
-		data_msg->destroy(data_msg);
-	}
+	// 3) computed reference to the root
+	RefTwoDimIntArrayMsg ref_to_root = RefTwoDimIntArrayMsg_create(SUB_ARRAT_MSG);
+	ref_to_root->size = this->bucket_count;
+	ref_to_root->counts = counts;
+	ref_to_root->values = values_to_propagate;
+	send(this, (Message)ref_to_root, this->root_id);
+	ref_to_root->destroy(ref_to_root);
 	clock_gettime(CLOCK_MONOTONIC, &propagate_end);
 
-	// Rebuild final data
-	struct timespec rebuild_start, rebuild_end;
-	clock_gettime(CLOCK_MONOTONIC, &rebuild_start);
-	this->propagated_messages = malloc(sizeof(int*)*this->bucket_count);
-	this->propagated_messages_counts = malloc(sizeof(int)*this->bucket_count);
-	this->propagated_messages_current = 0;
-	this->final_data_size = 0;
-	for (int i = 0; i < this->bucket_count; i++) { // Need K ref_intarray
-		receive(this);
-	}
-	this->final_data_values = malloc(sizeof(int) * this->final_data_size);
-	int current_final = 0;
-	for (int i = 0; i < this->bucket_count; i++) { // Copy values
-		for (int j = 0; j < this->propagated_messages_counts[i]; j++) {
-			this->final_data_values[current_final] = this->propagated_messages[i][j];
-			current_final++;
-		}
-	}
-	free(this->propagated_messages);
-	free(this->propagated_messages_counts);
-	clock_gettime(CLOCK_MONOTONIC, &rebuild_end);
+	// ----------------------------------
+	// Round 3) - Get K reference to all subarray and rebuild final array
+	// ----------------------------------
+
+	// Receive sub-array for this bucket
+	receive(this);
 
 	// Final sorting
 	struct timespec finalize_start, finalize_end;
@@ -199,7 +199,7 @@ static void start(BucketTask this) {
 	struct timespec propagate_diff = diff(propagate_start, propagate_end);
 	printf("TIMING-BUCKET %d %lds,%ldms - Propagation time\n",this->taskID, propagate_diff.tv_sec, propagate_diff.tv_nsec/1000000);
 
-	struct timespec rebuild_diff = diff(rebuild_start, rebuild_end);
+	struct timespec rebuild_diff = diff(this->rebuild_start, this->rebuild_end);
 	printf("TIMING-BUCKET %d %lds,%ldms - Rebuild array time\n",this->taskID, rebuild_diff.tv_sec, rebuild_diff.tv_nsec/1000000);
 
 	struct timespec finalize_diff = diff(finalize_start, finalize_end);
@@ -237,27 +237,46 @@ static void receive(BucketTask this) {
 
 	// match the message to the right message "handler"
 	switch (tag) {
+		// Pre-phase
+	case BAR_MSG: // Should not be received
+		break; // Should not be received
+	case REF_INTARRAY_MSG:
+		break;
+		// Phase 1
 	case TOPOLOGY_MSG:
 		msg = Comm->receive(this->taskID);
 		handle_TopologyMsg(this, (TopologyMsg)msg);
 		break;
-	case REF_INTARRAY_MSG:
+	case DATA_REF_MSG:
 		msg = Comm->receive(this->taskID);
-		handle_RefIntArrayMsg(this, (RefIntArrayMsg)msg);
+		handle_DataRefMsg(this, (RefIntArrayMsg)msg);
 		break;
-	case INTARRAY_MSG:
+	case SPLITTER_MSG:
 		msg = Comm->receive(this->taskID);
-		handle_IntArrayMsg(this, (IntArrayMsg)msg);
+		handle_SplitterMsg(this, (IntArrayMsg)msg);
 		break;
-	case PROPAGATION_MSG:
-		msg = Comm->receive(this->taskID);
-		handle_PropagationMsg(this, (RefIntArrayMsg)msg);
+		// Phase 2
+	case GET_SUB_ARRAY_MSG:
+		msg = Comm->receive(this->taskID); 
+		handle_GetSubArrayMsg(this, (DoneMsg)msg);
+		break;
+	case SUB_ARRAT_MSG: // Should never be received
+		break;
+		// Phase 3
+	case SET_SUB_ARRAY_MSG:
+		msg = Comm->receive(this->taskID); 
+		handle_SetSubArrayMsg(this, (RefTwoDimIntArrayMsg)msg);
+		break;
+	case DONE_MSG: // Should never be received
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
 		Comm->dropMsg(this->taskID);
 	}
+
 }
+
+// Phase 1
 
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg) {
 	printf("Bucket %d received topology\n", this->taskID);
@@ -267,48 +286,47 @@ static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg) {
 		this->bucket_ids[i] = topologyMsg->bucket_ids[i];
 	}
 	this->root_id = topologyMsg->root_id;
-
-	this->state = GET_DATA;
 }
 
-static void handle_RefIntArrayMsg(BucketTask this, RefIntArrayMsg refintarrayMsg) {
+static void handle_DataRefMsg(BucketTask this, RefIntArrayMsg refintarrayMsg) {
 	printf("Bucket %d received reference to data\n", this->taskID);
 	this->data_size = refintarrayMsg->getSize(refintarrayMsg);
 	this->data_ref = refintarrayMsg->values;
-
-	this->state = GET_SPLITTERS;
 }
 
-static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg) {
+static void handle_SplitterMsg(BucketTask this, IntArrayMsg intarrayMsg) {
 	printf("Bucket %d received splitters\n", this->taskID);
 	this->splitter_size = intarrayMsg->getSize(intarrayMsg);
 	this->splitters = malloc(intarrayMsg->getSize(intarrayMsg) * sizeof(int));
 	for (int i = 0; i < intarrayMsg->getSize(intarrayMsg); i++) {
 		this->splitters[i] = intarrayMsg->getValue(intarrayMsg, i);
 	}
-
-	this->state = PROPAGATION;
 }
 
-static void handle_PropagationMsg(BucketTask this, RefIntArrayMsg propagationMsg) {
-	// If received before propagation, send back in Q
-	if (this->state != PROPAGATION) {
-		send(this, (Message)propagationMsg, this->taskID);
-		return;
-	}
+// Phase 2
 
-	// Keep pointers and counts
-	printf("Bucket %d received propagation message (size=%d) \n", this->taskID, propagationMsg->size);
-#ifdef DEBUG_DATA
-	printf("Bucket %d propagation values : ", this->taskID);
-	for (int i = 0; i < propagationMsg->size; i++) {
-		printf("%d ", propagationMsg->values[i]);
-	}
-	printf("\n");
-#endif
+static void handle_GetSubArrayMsg(BucketTask this, DoneMsg doneMsg) {
+	printf("Bucket %d received GetSubArrayMsg request\n", this->taskID);
+}
 
-	this->propagated_messages[this->propagated_messages_current] = propagationMsg->values;
-	this->propagated_messages_counts[this->propagated_messages_current] = propagationMsg->size;
-	this->propagated_messages_current++;
-	this->final_data_size += propagationMsg->size;
+// Phase 3
+
+static void handle_SetSubArrayMsg(BucketTask this, RefTwoDimIntArrayMsg reftwodimMsg) {
+	printf("Bucket %d received SetSubArrayMsg\n", this->taskID);
+
+	// Rebuild final data
+	clock_gettime(CLOCK_MONOTONIC, &this->rebuild_start);
+	this->final_data_size = 0;
+	for (int i = 0; i < reftwodimMsg->size; i++) {
+		this->final_data_size += reftwodimMsg->counts[i];
+	}
+	this->final_data_values = malloc(this->final_data_size * sizeof(int));
+	int index = 0;
+	for (int i = 0; i < reftwodimMsg->size; i++) {
+		for (int j = 0; j < reftwodimMsg->counts[i]; j++) {
+			this->final_data_values[index] = reftwodimMsg->values[i][j];
+			index++;
+		}
+	}
+	clock_gettime(CLOCK_MONOTONIC, &this->rebuild_end);
 }

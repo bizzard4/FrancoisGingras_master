@@ -15,9 +15,13 @@ static void receive(SampleSortTask this);
 static void *run(void *SampleSortTaskRef);
 static void start(SampleSortTask this);
 
-static void handle_RefIntArrayMsg(SampleSortTask this, RefIntArrayMsg refIntArrayMsg);
-static void handle_DoneMsg(SampleSortTask this, DoneMsg doneMsg);
+// Pre-phase
 static void handle_BarMsg(SampleSortTask this, BarMsg barMsg);
+static void handle_RefIntArrayMsg(SampleSortTask this, RefIntArrayMsg refIntArrayMsg);
+
+static void handle_SubArrayMsg(SampleSortTask this, RefTwoDimIntArrayMsg reftwodimMsg);
+
+static void handle_DoneMsg(SampleSortTask this, DoneMsg doneMsg);
 
 // The SampleSortTask "class"
 struct SampleSortTask {
@@ -30,6 +34,10 @@ struct SampleSortTask {
 	int* data;
 	int size;
 	int K;
+
+	// Ref to send to buckets
+	RefTwoDimIntArrayMsg* buckets_values_arr;
+	int buckets_values_arr_count;
 };
 
 // The SampleSortTask "constructor"

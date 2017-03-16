@@ -16,10 +16,12 @@ static void *run(void *BucketTaskkRef);
 static void start(BucketTask this);
 
 static void handle_TopologyMsg(BucketTask this, TopologyMsg topologyMsg);
-static void handle_RefIntArrayMsg(BucketTask this, RefIntArrayMsg refintarrayMsg);
-static void handle_IntArrayMsg(BucketTask this, IntArrayMsg intarrayMsg);
+static void handle_DataRefMsg(BucketTask this, RefIntArrayMsg refintarrayMsg);
+static void handle_SplitterMsg(BucketTask this, IntArrayMsg intarrayMsg);
 
-static void handle_PropagationMsg(BucketTask this, RefIntArrayMsg propagationMsg);
+static void handle_GetSubArrayMsg(BucketTask this, DoneMsg doneMsg);
+
+static void handle_SetSubArrayMsg(BucketTask this, RefTwoDimIntArrayMsg reftwodimMsg);
 
 // The BucketTask "class"
 struct BucketTask {
@@ -29,7 +31,6 @@ struct BucketTask {
 	int taskID;
 
 	// Algorithm state
-	int state;
 
 	// Topology information
 	int bucket_count; // K
@@ -44,11 +45,6 @@ struct BucketTask {
 	int* splitters;
 	int splitter_size;
 
-	// Propagated messages
-	int** propagated_messages;
-	int* propagated_messages_counts;
-	int propagated_messages_current;
-
 	// Final value, copy
 	int* final_data_values;
 	int final_data_size;
@@ -56,6 +52,10 @@ struct BucketTask {
 	// Time accumulator
 	struct timespec send_time_acc;
 	struct timespec receive_wait_acc;
+
+	// Rebuild time
+	struct timespec rebuild_start;
+	struct timespec rebuild_end;
 };
 
 // The BucketTask "constructor"
