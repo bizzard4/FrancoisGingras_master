@@ -49,6 +49,9 @@ int buckettask_cmpfunc(const void* a, const void* b)
 
 static void start(BucketTask this) {
 	printf("Bucket %d starting\n", this->taskID);
+	memset(&(this->send_time_acc), 0, sizeof(struct timespec));
+	memset(&(this->receive_wait_acc), 0, sizeof(struct timespec));
+	
 
 	// ----------------------------------
 	// Round 1) - Get topology, data reference and splitters
