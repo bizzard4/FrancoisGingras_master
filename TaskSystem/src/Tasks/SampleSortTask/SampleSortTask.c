@@ -94,6 +94,7 @@ static void start(SampleSortTask this) {
 
 	// 1) (TODO : TABLE)
 	const int SAMPLE_SIZE = 1500;
+	srand(time(NULL));
 	int samples[SAMPLE_SIZE];
 	for (int i = 0; i < SAMPLE_SIZE; i++) {
 		long val = random_at_most(this->size-1);
@@ -107,7 +108,6 @@ static void start(SampleSortTask this) {
 	int splitters[this->K];
 	int step = SAMPLE_SIZE/(this->K);
 	printf("Splitter : ");
-	srand(time(NULL));
 	for (int i = 0; i < (this->K)-1; i++) {
 		splitters[i] = samples[(i+1)*step];
 		printf("(i=%d,v=%d) ", i, splitters[i]);

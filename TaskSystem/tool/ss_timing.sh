@@ -13,7 +13,7 @@ do
 done
 
 echo "Aggregation ->"
-for n in $(seq 1 $4)
+for ni in $(seq 1 $4)
 do
-	python3 ../tool/parse_timing.py $1 out_k$1_n$2_$n.txt >> k$1_n$2.csv
+	python3 ../tool/parse_timing.py $1 out_k$1_n$2_$ni.txt >> k$1_n$2.csv
 done
