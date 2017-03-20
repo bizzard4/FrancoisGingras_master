@@ -86,18 +86,34 @@ static void start(SampleSortTask this) {
 	printf("Size per task = %d (N=%d, K=%d) \n", size_per_task, this->size, this->K);
 
 	// Gather random sample and prepare splitters
+	// 1) Get x sample (from table)
+	// 2) Sort them
+	// 3) Pick from the sorted set
 	struct timespec random_start, random_end;
 	clock_gettime(CLOCK_MONOTONIC, &random_start);
+
+	// 1) (TODO : TABLE)
+	const int SAMPLE_SIZE = 1500;
+	int samples[SAMPLE_SIZE];
+	for (int i = 0; i < SAMPLE_SIZE; i++) {
+		long val = random_at_most(this->size-1);
+		samples[i] = this->data[val];
+	}
+
+	// 2)
+	qsort(samples, SAMPLE_SIZE, sizeof(int), samplesorttask_cmpfunc);
+
+	// 3)
 	int splitters[this->K];
+	int step = SAMPLE_SIZE/(this->K);
 	printf("Splitter : ");
 	srand(time(NULL));
-	for (int i = 0; i < (this->K); i++) {
-		long val = random_at_most(this->size-1);
-		splitters[i] = this->data[val];
-		printf("(i=%ld,v=%d) ", val, splitters[i]);
+	for (int i = 0; i < (this->K)-1; i++) {
+		splitters[i] = samples[(i+1)*step];
+		printf("(i=%d,v=%d) ", i, splitters[i]);
 	}
+	splitters[(this->K)-1] = 1000000; // Last splitter is not important
 	printf("\n");
-	qsort(splitters, this->K, sizeof(int), samplesorttask_cmpfunc);
 	clock_gettime(CLOCK_MONOTONIC, &random_end);
 
 	// Create K bucket task

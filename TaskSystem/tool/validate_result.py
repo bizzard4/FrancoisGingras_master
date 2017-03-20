@@ -26,12 +26,12 @@ for line in output_file:
 	if line.startswith("Splitter"): # Parse the splitter
 		print("Splitter line :", line)
 		splitted = line.split(" ")
-		for ki in range(2, K+2):
+		for ki in range(2, K+1): # Get the k-1 splitters
 			s = splitted[ki]
 			splitters.append(int(s[s.index("v=")+2:len(s)-1]))
 		splitters = sorted(splitters)
 		print("Splitter found -", splitters)
-		splitters[len(splitters)-1] = 1000000000 # Last splitter is ignored
+		splitters.append(1000000000) # Last splitter is ignored
 	elif line.startswith("BUCKET="):
 		splitted = line.split(" ")
 		b_id = int(splitted[0][7:])
