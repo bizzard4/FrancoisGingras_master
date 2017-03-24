@@ -65,6 +65,9 @@ int main(int argc, char *argv[]) {
 	}
 	clock_gettime(CLOCK_MONOTONIC, &read_end);
 
+	// Create the sleep token
+	unsigned int token = Comm->createSleepToken();
+
 	// Create the samplesort task
 	struct timespec create_start, create_end;
 	clock_gettime(CLOCK_MONOTONIC, &create_start);
@@ -87,6 +90,7 @@ int main(int argc, char *argv[]) {
 	// Without mecanic to wait on a task, we will use this temporary global variable.
 	struct timespec wait_start, wait_end;
 	clock_gettime(CLOCK_MONOTONIC, &wait_start);
+	Comm->goToSleep(token);
 	while (done == 0);
 	clock_gettime(CLOCK_MONOTONIC, &wait_end);
 

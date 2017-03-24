@@ -30,6 +30,11 @@ struct System {
 	unsigned int 	(*getNextTaskID)();
 	void 	(*createMsgQ)(unsigned int taskID);
 	void 	(*destroy)(System this);
+
+	// Sleep-wakeup token
+	unsigned int (*createSleepToken)();
+	void (*goToSleep)(unsigned int sleepToken);
+	void (*wakeUp)(unsigned int sleepToken);
 };
 
 

@@ -72,6 +72,9 @@ long random_at_most(long max) {
 
 static void start(SampleSortTask this) {
 
+	// Create the sleep token
+	unsigned int token = Comm->createSleepToken(); // Should be 1
+
 	// Pre-round - get initial data
 
 	// Get the number of buckets
@@ -211,6 +214,7 @@ static void start(SampleSortTask this) {
 	}
 
 	// Phase 3 wait on K done message
+	Comm->goToSleep(token);
 	for (int ki = 0; ki < this->K; ki++) {
 		receive(this);
 	}
@@ -236,6 +240,7 @@ static void start(SampleSortTask this) {
 	if (errno > 0) {
 		printf("Error number=%d\n", errno);
 	}
+	Comm->wakeUp(0);
 	done = 1;
 }
 

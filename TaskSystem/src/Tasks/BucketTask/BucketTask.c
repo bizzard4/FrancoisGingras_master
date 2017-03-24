@@ -215,6 +215,7 @@ static void start(BucketTask this) {
 	printf("TIMING-BUCKET %d %d - Reveived values\n", this->taskID, this->final_data_size);
 
 	// Send "done" to root signaling output is complete
+	Comm->wakeUp(1);
 	DoneMsg output_done_msg = DoneMsg_create(DONE_MSG);
 	output_done_msg->success = 1;
 	send(this, (Message)output_done_msg, this->root_id);

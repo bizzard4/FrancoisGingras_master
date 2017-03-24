@@ -12,6 +12,9 @@ static unsigned int nextTaskID = 1;
 
 pthread_mutex_t TaskIDLock = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t SleepTokenLock = PTHREAD_MUTEX_INITIALIZER;
+static unsigned nextSleepToken = 0;
+static pthread_cond_t SleepConditions[10];
 
 
 static void send(Message data, int targetTaskID){
@@ -64,9 +67,28 @@ static void destroy(System this){
 	free(this);
 }
 
+static unsigned int createSleepToken() {
+	pthread_mutex_lock (&SleepTokenLock);
 
+	unsigned int new_index = nextSleepToken;
+	nextSleepToken++;
 
+	pthread_cond_init(&SleepConditions[new_index], NULL);
 
+	pthread_mutex_unlock (&SleepTokenLock);
+
+	return new_index;
+}
+	
+static void goToSleep(unsigned int sleepToken) {
+	pthread_mutex_lock (&SleepTokenLock);
+	pthread_cond_wait(&SleepConditions[sleepToken], &SleepTokenLock);
+	pthread_mutex_unlock (&SleepTokenLock);
+}
+
+static void wakeUp(unsigned int sleepToken) {
+	pthread_cond_signal(&SleepConditions[sleepToken]);
+}
 
 
 /*
@@ -86,6 +108,10 @@ System System_create(){
 	newRec->getNextTaskID = getNextTaskID;
 	newRec->createMsgQ = createMsgQ;;
 	newRec->destroy = destroy;
+
+	newRec->createSleepToken = createSleepToken;
+	newRec->goToSleep = goToSleep;
+	newRec->wakeUp = wakeUp;
 
 	return newRec;
 }
