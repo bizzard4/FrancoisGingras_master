@@ -98,7 +98,7 @@ static void start(BucketTask this) {
 	clock_gettime(CLOCK_MONOTONIC, &propagate_start);
 
  	// 1) get count
-	int counts[this->bucket_count];
+	int* counts = malloc(this->bucket_count * sizeof(int));
 	for (int i = 0; i < this->bucket_count; i++) {
 		counts[i] = 0;
 	}
