@@ -4,10 +4,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
+#include <unistd.h>
 
 
-static Queue TaskTable[1000]; // should be dynamically sized!
+static Queue TaskTable[100]; // should be dynamically sized!
 static unsigned int nextTaskID = 1;
 
 pthread_mutex_t TaskIDLock = PTHREAD_MUTEX_INITIALIZER;
@@ -35,9 +35,14 @@ static void dropMsg(int targetTaskID){
 
 static int getMsgTag(int targetTaskID){
 
-	if(IsEmpty(TaskTable[targetTaskID]))
-		return -1;
+	// If Q is empty, we go to sleep
+	if(IsEmpty(TaskTable[targetTaskID])) {
+		pthread_mutex_lock(&(Comm->sleepers_lock));
+ 		pthread_cond_wait(&(Comm->sleepers[targetTaskID]), &(Comm->sleepers_lock));
+ 		pthread_mutex_unlock(&(Comm->sleepers_lock));
+	}
 
+	// Recheck
 	Message msg = Peek(TaskTable[targetTaskID]);
 	if (msg == NULL) {
 		return -1;
@@ -61,13 +66,11 @@ static void createMsgQ(unsigned int taskID){
 
 
 static void destroy(System this){
+	this->shutdown_signal = 1;
+	// Wait for signal/wait loop to finish
+	pthread_join(this->threadRef, NULL);
 	free(this);
 }
-
-
-
-
-
 
 /*
  * With other objects, the create method was placed into a "generated"
@@ -87,5 +90,48 @@ System System_create(){
 	newRec->createMsgQ = createMsgQ;;
 	newRec->destroy = destroy;
 
+	newRec->shutdown_signal = 0;
+	int mutex_res = pthread_mutex_init(&(newRec->sleepers_lock), NULL);
+	if (mutex_res) {
+		printf("ERROR; Sleeper lock pthread_mutex_init is %d\n", mutex_res);
+		exit(-1);
+	}
+
+	pthread_mutex_lock(&(newRec->sleepers_lock));
+	for (int i = 0; i < 100; i++) {
+		pthread_cond_init(&(newRec->sleepers[i]), NULL);
+	}
+	pthread_mutex_unlock(&(newRec->sleepers_lock));
+
+	int result = pthread_create(&(newRec->threadRef), NULL, run, (void *)newRec);
+	if (result){
+		printf("ERROR; return code from pthread_create() is %d\n", result);
+	    exit(-1);
+	}
+
 	return newRec;
+}
+
+static void* run(void* SystemRef) {
+	System this = (System)SystemRef;
+	loop_wait_signal(this);
+	pthread_exit(NULL);
+}
+
+static void loop_wait_signal(System this) {
+	printf("System loop for wait and signal is started\n");
+
+	while(this->shutdown_signal <= 0) {
+		pthread_mutex_lock (&TaskIDLock);
+		int current_max_id = nextTaskID;
+		pthread_mutex_unlock (&TaskIDLock);
+
+		for (int i = 0; i < current_max_id; i++) {
+			pthread_cond_signal(&(this->sleepers[i]));
+		}
+
+		usleep(10000); // 10ms
+	}
+	
+	printf("System loop for wait and signal has shutdown\n");
 }

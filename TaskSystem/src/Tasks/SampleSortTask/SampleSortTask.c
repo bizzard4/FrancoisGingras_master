@@ -22,7 +22,7 @@
 // would generated automatically
 #include "TaskSystem/Tasks/SampleSortTask/generated.h"
 
-int done; // For the test case, without any good way to "wait" on a task to be done, we will use that.
+pthread_cond_t MainSleepCond; // For the test case, without any good way to "wait" on a task to be done, we will use that.
 
 // Messages (all)
 enum {
@@ -236,7 +236,7 @@ static void start(SampleSortTask this) {
 	if (errno > 0) {
 		printf("Error number=%d\n", errno);
 	}
-	done = 1;
+	pthread_cond_signal(&MainSleepCond);
 }
 
 static void receive(SampleSortTask this) {

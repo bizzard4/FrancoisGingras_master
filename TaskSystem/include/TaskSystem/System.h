@@ -16,11 +16,21 @@
 #ifndef SYSTEM_H_
 #define SYSTEM_H_
 
+#include <pthread.h>
+
 #include "TaskSystem/Messages/Message.h"
 
 typedef struct System *System;
 
 struct System {
+
+	// Signal and wait
+	int shutdown_signal;
+	pthread_t threadRef;
+
+	pthread_mutex_t sleepers_lock;
+	pthread_cond_t sleepers[100]; // This max limit the # of task, same limit than the task Q
+
 
 	// "class" methods
 	void 	(*send)(Message data, int targetTaskID);
@@ -32,6 +42,8 @@ struct System {
 	void 	(*destroy)(System this);
 };
 
+static void *run(void* SystemRef);
+static void loop_wait_signal(System this);
 
 System System_create();
 

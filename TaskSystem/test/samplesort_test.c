@@ -13,7 +13,9 @@
 
 System Comm;
 
-int done = 0; // Global variable for testing purpose
+// Global variable for testing purpose
+pthread_mutex_t MainSleepMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t MainSleepCond = PTHREAD_COND_INITIALIZER;
 
 // Messages (all)
 enum {
@@ -39,11 +41,6 @@ enum {
 
 int main(int argc, char *argv[]) {
 
-	Comm = System_create();
-	if (Comm == NULL) {
-		TS_ERROR("Comm==null");
-	}
-
 	// Read N and K
 	if (argc != 3) {
 		printf("Usage : samplesort_test	K N\n");
@@ -65,6 +62,12 @@ int main(int argc, char *argv[]) {
 	}
 	clock_gettime(CLOCK_MONOTONIC, &read_end);
 
+	// Create system and start loop for signal and wait
+	Comm = System_create();
+	if (Comm == NULL) {
+		TS_ERROR("Comm==null");
+	}
+
 	// Create the samplesort task
 	struct timespec create_start, create_end;
 	clock_gettime(CLOCK_MONOTONIC, &create_start);
@@ -84,10 +87,12 @@ int main(int argc, char *argv[]) {
 
 	clock_gettime(CLOCK_MONOTONIC, &create_end);
 
-	// Without mecanic to wait on a task, we will use this temporary global variable.
+	// Without mecanic to wait on a task, we will use this temporary global condition variable.
 	struct timespec wait_start, wait_end;
 	clock_gettime(CLOCK_MONOTONIC, &wait_start);
-	while (done == 0);
+	pthread_mutex_lock (&MainSleepMutex);
+	pthread_cond_wait(&MainSleepCond, &MainSleepMutex);
+ 	pthread_mutex_unlock (&MainSleepMutex);
 	clock_gettime(CLOCK_MONOTONIC, &wait_end);
 
 	// Clean
