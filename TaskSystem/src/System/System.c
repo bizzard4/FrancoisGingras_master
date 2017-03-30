@@ -127,7 +127,9 @@ static void loop_wait_signal(System this) {
 		pthread_mutex_unlock (&TaskIDLock);
 
 		for (int i = 0; i < current_max_id; i++) {
-			pthread_cond_signal(&(this->sleepers[i]));
+			if(!IsEmpty(TaskTable[i])) {
+				pthread_cond_signal(&(this->sleepers[i]));
+			}
 		}
 
 		usleep(10000); // 10ms
