@@ -106,27 +106,37 @@ System System_create(){
 	newRec->createMsgQ = createMsgQ;;
 	newRec->destroy = destroy;
 
-	// Initialize variables
+	// Initialize ID and ID mutex
 	newRec->data->nextTaskID = 1;
-	int mutex_res = pthread_mutex_init(&(newRec->data->TaskIDLock), NULL);
+	pthread_mutexattr_t m_attr;
+	pthread_mutexattr_init(&m_attr);
+	pthread_mutexattr_setpshared(&m_attr, PTHREAD_PROCESS_SHARED);
+	int mutex_res = pthread_mutex_init(&(newRec->data->TaskIDLock), &m_attr);
 	if (mutex_res) {
 		printf("ERROR; TaskIDLock pthread_mutex_init is %d\n", mutex_res);
 		exit(-1);
 	}
 
+	// Initialize shutdown signal, wait and signal condition
 	newRec->data->shutdown_signal = 0;
-	mutex_res = pthread_mutex_init(&(newRec->data->sleepers_lock), NULL);
+	mutex_res = pthread_mutex_init(&(newRec->data->sleepers_lock), &m_attr);
 	if (mutex_res) {
 		printf("ERROR; Sleeper lock pthread_mutex_init is %d\n", mutex_res);
 		exit(-1);
 	}
+	pthread_condattr_t cond_attr;
+    pthread_condattr_init(&cond_attr);
+    pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED);
 	pthread_mutex_lock(&(newRec->data->sleepers_lock));
 	for (int i = 0; i < 100; i++) {
-		pthread_cond_init(&(newRec->data->sleepers[i]), NULL);
+		pthread_cond_init(&(newRec->data->sleepers[i]), &cond_attr);
 	}
 	pthread_mutex_unlock(&(newRec->data->sleepers_lock));
 
-	// Wait signal thread
+	pthread_condattr_destroy(&cond_attr);
+	pthread_mutexattr_destroy(&m_attr);
+
+	// Create the wait/signal thread
 	int result = pthread_create(&(newRec->data->threadRef), NULL, run, (void *)newRec);
 	if (result){
 		printf("ERROR; return code from pthread_create() is %d\n", result);
