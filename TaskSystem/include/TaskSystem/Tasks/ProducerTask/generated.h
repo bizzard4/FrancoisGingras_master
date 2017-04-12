@@ -34,8 +34,8 @@ unsigned int ProducerTask_create(){
 	if(newRec == NULL)
 		FatalError("Cannot allocate memory in ProducerTask_create");
 
-	newRec->taskID = Comm->getNextTaskID();
-	Comm->createMsgQ(newRec->taskID);
+	newRec->taskID = Comm->getNextTaskID(Comm);
+	Comm->createMsgQ(Comm, newRec->taskID);
 
 	int result = pthread_create( &(newRec->threadRef), NULL, run, (void *)newRec);
 	if (result){
@@ -53,7 +53,7 @@ static void *run(void *ProducerTaskRef){
 }
 
 static void send(ProducerTask this, Message data, int targetID){
-	Comm->send(data, targetID);
+	Comm->send(Comm, data, targetID);
 }
 
 #endif /* PRODUCERTASK_GENERATED_H_ */

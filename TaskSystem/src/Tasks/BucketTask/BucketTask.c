@@ -224,13 +224,13 @@ static void start(BucketTask this) {
 }
 
 static void receive(BucketTask this) {
-	int tag = Comm->getMsgTag(this->taskID);
+	int tag = Comm->getMsgTag(Comm, this->taskID);
 
 	if (tag < 0) { // To accumulate receive time
 		struct timespec recv_start, recv_end;
 		clock_gettime(CLOCK_MONOTONIC, &recv_start);
 		while (tag < 0) { // Loop until message arrive.
-			tag = Comm->getMsgTag(this->taskID);
+			tag = Comm->getMsgTag(Comm, this->taskID);
 		}
 		clock_gettime(CLOCK_MONOTONIC, &recv_end);
 		this->receive_wait_acc = tsAdd(this->receive_wait_acc, diff(recv_start, recv_end));
@@ -247,34 +247,34 @@ static void receive(BucketTask this) {
 		break;
 		// Phase 1
 	case TOPOLOGY_MSG:
-		msg = Comm->receive(this->taskID);
+		msg = Comm->receive(Comm, this->taskID);
 		handle_TopologyMsg(this, (TopologyMsg)msg);
 		break;
 	case DATA_REF_MSG:
-		msg = Comm->receive(this->taskID);
+		msg = Comm->receive(Comm, this->taskID);
 		handle_DataRefMsg(this, (RefIntArrayMsg)msg);
 		break;
 	case SPLITTER_MSG:
-		msg = Comm->receive(this->taskID);
+		msg = Comm->receive(Comm, this->taskID);
 		handle_SplitterMsg(this, (IntArrayMsg)msg);
 		break;
 		// Phase 2
 	case GET_SUB_ARRAY_MSG:
-		msg = Comm->receive(this->taskID); 
+		msg = Comm->receive(Comm, this->taskID); 
 		handle_GetSubArrayMsg(this, (DoneMsg)msg);
 		break;
 	case SUB_ARRAT_MSG: // Should never be received
 		break;
 		// Phase 3
 	case SET_SUB_ARRAY_MSG:
-		msg = Comm->receive(this->taskID); 
+		msg = Comm->receive(Comm, this->taskID); 
 		handle_SetSubArrayMsg(this, (RefTwoDimIntArrayMsg)msg);
 		break;
 	case DONE_MSG: // Should never be received
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
-		Comm->dropMsg(this->taskID);
+		Comm->dropMsg(Comm, this->taskID);
 	}
 
 }

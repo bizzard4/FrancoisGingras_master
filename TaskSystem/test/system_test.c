@@ -24,7 +24,7 @@ int main(void) {
 	}
 
 	// Test next id
-	int next_id = Comm->getNextTaskID();
+	int next_id = Comm->getNextTaskID(Comm);
 	if (next_id != 1) {
 		TS_ERROR("Wrong next_id");
 	}

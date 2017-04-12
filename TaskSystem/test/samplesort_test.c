@@ -76,13 +76,13 @@ int main(int argc, char *argv[]) {
 	// Send K size
 	BarMsg k_msg = BarMsg_create(BAR_MSG);
 	k_msg->setValue(k_msg, k);
-	Comm->send((Message)k_msg, samplesort);
+	Comm->send(Comm, (Message)k_msg, samplesort);
 	k_msg->destroy(k_msg);
 
 	// Send test data
 	RefIntArrayMsg data_msg = RefIntArrayMsg_create(REF_INTARRAY_MSG);
 	data_msg->setValues(data_msg, n, test_data);
-	Comm->send((Message)data_msg, samplesort);
+	Comm->send(Comm, (Message)data_msg, samplesort);
 	data_msg->destroy(data_msg);
 
 	clock_gettime(CLOCK_MONOTONIC, &create_end);

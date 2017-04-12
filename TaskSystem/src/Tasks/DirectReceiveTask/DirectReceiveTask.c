@@ -35,7 +35,7 @@ static void start(DirectReceiveTask this){
 
 
 static void receive(DirectReceiveTask this){
-	int tag = Comm->getMsgTag( this->taskID );
+	int tag = Comm->getMsgTag(Comm, this->taskID );
 
 	if(tag == -1) { // Missed the message
 		printf("FAILURE : MESSAGE MISS\n");
@@ -47,12 +47,12 @@ static void receive(DirectReceiveTask this){
 	// match the message to the right message "handler"
 	switch (tag) {
 	case BAR_MSG :
-		barMsg = (BarMsg)Comm->receive(this->taskID);
+		barMsg = (BarMsg)Comm->receive(Comm, this->taskID);
 		handle_BarMsg(this, barMsg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
-		Comm->dropMsg(this->taskID);
+		Comm->dropMsg(Comm, this->taskID);
 	}
 }
 

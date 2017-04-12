@@ -52,9 +52,9 @@ static void start(ProducerTask this){
 
 // This reciever will loop until the next message is received
 static void receive(ProducerTask this){
-	int tag = Comm->getMsgTag(this->taskID);
+	int tag = Comm->getMsgTag(Comm, this->taskID);
 	while (tag < 0) {
-		tag = Comm->getMsgTag(this->taskID);
+		tag = Comm->getMsgTag(Comm, this->taskID);
 	}
 
 	BarMsg barMsg;
@@ -62,12 +62,12 @@ static void receive(ProducerTask this){
 	// match the message to the right message "handler"
 	switch (tag) {
 	case BAR_MSG :
-		barMsg = (BarMsg)Comm->receive(this->taskID);
+		barMsg = (BarMsg)Comm->receive(Comm, this->taskID);
 		handle_BarMsg(this, barMsg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
-		Comm->dropMsg(this->taskID);
+		Comm->dropMsg(Comm, this->taskID);
 	}
 }
 

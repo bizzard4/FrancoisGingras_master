@@ -33,8 +33,8 @@ unsigned int ConsumerTask_create(){
 	if(newRec == NULL)
 		FatalError("Cannot allocate memory in ConsumerTask_create");
 
-	newRec->taskID = Comm->getNextTaskID();
-	Comm->createMsgQ(newRec->taskID);
+	newRec->taskID = Comm->getNextTaskID(Comm);
+	Comm->createMsgQ(Comm, newRec->taskID);
 
 	int result = pthread_create( &(newRec->threadRef), NULL, run, (void *)newRec);
 	if (result){
@@ -52,7 +52,7 @@ static void *run(void *ConsumerTaskRef){
 }
 
 static void send(ConsumerTask this, Message data, int targetID){
-	Comm->send(data, targetID);
+	Comm->send(Comm, data, targetID);
 }
 
 #endif /* CONSUMERTASK_GENERATED_H_ */

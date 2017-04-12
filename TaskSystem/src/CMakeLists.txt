@@ -24,6 +24,7 @@ set(SOURCES
   Tasks/ProducerTask/ProducerTask.c
   Tasks/SampleSortTask/SampleSortTask.c
   Tasks/BucketTask/BucketTask.c
+  Tasks/DatabaseTask/DatabaseTask.c
   TimeHelper.c
 )
 

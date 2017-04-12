@@ -240,9 +240,9 @@ static void start(SampleSortTask this) {
 }
 
 static void receive(SampleSortTask this) {
-	int tag = Comm->getMsgTag(this->taskID);
+	int tag = Comm->getMsgTag(Comm, this->taskID);
 	while (tag < 0) {
-		tag = Comm->getMsgTag(this->taskID);
+		tag = Comm->getMsgTag(Comm, this->taskID);
 	}
 
 	Message msg;
@@ -251,11 +251,11 @@ static void receive(SampleSortTask this) {
 	switch (tag) {
 		// Pre-phase
 	case BAR_MSG:
-		msg = Comm->receive(this->taskID);
+		msg = Comm->receive(Comm, this->taskID);
 		handle_BarMsg(this, (BarMsg)msg);
 		break;
 	case REF_INTARRAY_MSG:
-		msg = Comm->receive(this->taskID);
+		msg = Comm->receive(Comm, this->taskID);
 		handle_RefIntArrayMsg(this, (RefIntArrayMsg)msg);
 		break;
 		// Phase 1
@@ -269,19 +269,19 @@ static void receive(SampleSortTask this) {
 	case GET_SUB_ARRAY_MSG: // Should never be received
 		break;
 	case SUB_ARRAT_MSG:
-		msg = Comm->receive(this->taskID);
+		msg = Comm->receive(Comm, this->taskID);
 		handle_SubArrayMsg(this, (RefTwoDimIntArrayMsg)msg);
 		break;
 		// Phase 3
 	case SET_SUB_ARRAY_MSG: // Should never be received
 		break;
 	case DONE_MSG:
-		msg = Comm->receive(this->taskID);
+		msg = Comm->receive(Comm, this->taskID);
 		handle_DoneMsg(this, (DoneMsg)msg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
-		Comm->dropMsg(this->taskID);
+		Comm->dropMsg(Comm, this->taskID);
 	}
 }
 

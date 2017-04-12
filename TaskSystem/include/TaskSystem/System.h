@@ -18,27 +18,36 @@
 
 #include <pthread.h>
 
+#include "TaskSystem/UnboundedMsgQ.h"
 #include "TaskSystem/Messages/Message.h"
+
+#define SYSTEM_SHARED_MEM_NAME "/tmp/TS_SYSTEM"
+#define MAX_TASK 100
 
 typedef struct System *System;
 
 struct System {
+
+	// Message Q and ID
+	Queue TaskTable[MAX_TASK];
+	unsigned int nextTaskID;
+	pthread_mutex_t TaskIDLock;
 
 	// Signal and wait
 	int shutdown_signal;
 	pthread_t threadRef;
 
 	pthread_mutex_t sleepers_lock;
-	pthread_cond_t sleepers[100]; // This max limit the # of task, same limit than the task Q
+	pthread_cond_t sleepers[MAX_TASK]; // This max limit the # of task, same limit than the task Q
 
 
 	// "class" methods
-	void 	(*send)(Message data, int targetTaskID);
-	Message (*receive)(int targetTaskID);
-	void 	(*dropMsg)(int targetTaskID);
-	int 	(*getMsgTag)(int targetTaskID);
-	unsigned int 	(*getNextTaskID)();
-	void 	(*createMsgQ)(unsigned int taskID);
+	void 	(*send)(System this, Message data, int targetTaskID);
+	Message (*receive)(System this, int targetTaskID);
+	void 	(*dropMsg)(System this, int targetTaskID);
+	int 	(*getMsgTag)(System this, int targetTaskID);
+	unsigned int 	(*getNextTaskID)(System this);
+	void 	(*createMsgQ)(System this, unsigned int taskID);
 	void 	(*destroy)(System this);
 };
 

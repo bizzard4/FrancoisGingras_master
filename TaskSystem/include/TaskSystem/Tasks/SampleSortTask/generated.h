@@ -47,8 +47,8 @@ unsigned int SampleSortTask_create(){
 	if(newRec == NULL)
 		FatalError("Cannot allocate memory in SampleSortTask_create");
 
-	newRec->taskID = Comm->getNextTaskID();
-	Comm->createMsgQ(newRec->taskID);
+	newRec->taskID = Comm->getNextTaskID(Comm);
+	Comm->createMsgQ(Comm, newRec->taskID);
 
 	int result = pthread_create( &(newRec->threadRef), NULL, run, (void *)newRec);
 	if (result){
@@ -66,7 +66,7 @@ static void *run(void *SampleSortTaskRef){
 }
 
 static void send(SampleSortTask this, Message data, int targetID){
-	Comm->send(data, targetID);
+	Comm->send(Comm, data, targetID);
 }
 
 #endif /* SAMPLESORTTASK_GENERATED_H_ */

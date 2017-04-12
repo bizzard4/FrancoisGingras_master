@@ -52,7 +52,7 @@ static void start(BazTask this){
 static void receive(BazTask this){
 
 	// find out which message is next in the queue
-	int tag = Comm->getMsgTag( this->taskID );
+	int tag = Comm->getMsgTag(Comm, this->taskID);
 
 	if(tag == -1) // no messages in Q
 		return;
@@ -64,12 +64,12 @@ static void receive(BazTask this){
 	switch (tag) {
 
 	case TEXT_MSG :
-		textMsg = (TextMsg)Comm->receive(this->taskID);
+		textMsg = (TextMsg)Comm->receive(Comm, this->taskID);
 		handle_TextMsg(this, textMsg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
-		Comm->dropMsg(this->taskID);
+		Comm->dropMsg(Comm, this->taskID);
 	}
 }
 

@@ -31,10 +31,10 @@ static void start(LoopReceiveTask this){
 }
 
 static void receive(LoopReceiveTask this){
-	int tag = Comm->getMsgTag( this->taskID );
+	int tag = Comm->getMsgTag(Comm, this->taskID );
 
 	while (tag < 0) { // We need to pool back
-		tag = Comm->getMsgTag( this->taskID );
+		tag = Comm->getMsgTag(Comm, this->taskID );
 	}
 
 	if(tag == -1) { // Missed the message, fail-safe this should not happen
@@ -47,12 +47,12 @@ static void receive(LoopReceiveTask this){
 	// match the message to the right message "handler"
 	switch (tag) {
 	case BAR_MSG :
-		barMsg = (BarMsg)Comm->receive(this->taskID);
+		barMsg = (BarMsg)Comm->receive(Comm, this->taskID);
 		handle_BarMsg(this, barMsg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
-		Comm->dropMsg(this->taskID);
+		Comm->dropMsg(Comm, this->taskID);
 	}
 }
 

@@ -65,8 +65,8 @@ unsigned int BucketTask_create(){
 	if(newRec == NULL)
 		FatalError("Cannot allocate memory in SampleSortTask_create");
 
-	newRec->taskID = Comm->getNextTaskID();
-	Comm->createMsgQ(newRec->taskID);
+	newRec->taskID = Comm->getNextTaskID(Comm);
+	Comm->createMsgQ(Comm, newRec->taskID);
 
 	int result = pthread_create( &(newRec->threadRef), NULL, run, (void *)newRec);
 	if (result){
@@ -86,7 +86,7 @@ static void *run(void *BucketTaskRef){
 static void send(BucketTask this, Message data, int targetID){
 	struct timespec send_start, send_end;
 	clock_gettime(CLOCK_MONOTONIC, &send_start);
-	Comm->send(data, targetID);
+	Comm->send(Comm, data, targetID);
 	clock_gettime(CLOCK_MONOTONIC, &send_end);
 	this->send_time_acc = tsAdd(this->send_time_acc, diff(send_start, send_end));
 }

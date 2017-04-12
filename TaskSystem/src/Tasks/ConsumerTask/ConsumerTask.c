@@ -58,7 +58,7 @@ static void receive(ConsumerTask this) {
 		return;
 	}
 
-	int tag = Comm->getMsgTag( this->taskID );
+	int tag = Comm->getMsgTag(Comm, this->taskID );
 
 	if(tag == -1) { // No good to read
 		return;
@@ -68,12 +68,12 @@ static void receive(ConsumerTask this) {
 
 	switch (tag) {
 	case PRODUCE_MSG:
-		new_good = (ProduceMsg)Comm->receive(this->taskID);
+		new_good = (ProduceMsg)Comm->receive(Comm, this->taskID);
 		handle_ProduceMsg(this, new_good);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
-		Comm->dropMsg(this->taskID);
+		Comm->dropMsg(Comm, this->taskID);
 	}
 }
 

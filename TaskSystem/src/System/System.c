@@ -1,4 +1,3 @@
-#include "TaskSystem/UnboundedMsgQ.h"
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
 
@@ -7,43 +6,36 @@
 #include <unistd.h>
 
 
-static Queue TaskTable[100]; // should be dynamically sized!
-static unsigned int nextTaskID = 1;
-
-pthread_mutex_t TaskIDLock = PTHREAD_MUTEX_INITIALIZER;
-
-
-
-static void send(Message data, int targetTaskID){
+static void send(System this, Message data, int targetTaskID){
 	Message sendObj = data->clone(data);
-	Enqueue(TaskTable[targetTaskID], sendObj);
+	Enqueue(this->TaskTable[targetTaskID], sendObj);
 }
 
 
-static Message receive(int targetTaskID){
-	return Dequeue(TaskTable[targetTaskID]);
+static Message receive(System this, int targetTaskID){
+	return Dequeue(this->TaskTable[targetTaskID]);
 }
 
 
-static void dropMsg(int targetTaskID){
-	Message msg = Dequeue(TaskTable[targetTaskID]);
+static void dropMsg(System this, int targetTaskID){
+	Message msg = Dequeue(this->TaskTable[targetTaskID]);
 	if (msg != NULL) {
 		msg->destroy(msg);
 	}
 
 }
 
-static int getMsgTag(int targetTaskID){
+static int getMsgTag(System this, int targetTaskID){
 
 	// If Q is empty, we go to sleep
-	if(IsEmpty(TaskTable[targetTaskID])) {
+	if(IsEmpty(this->TaskTable[targetTaskID])) {
 		pthread_mutex_lock(&(Comm->sleepers_lock));
  		pthread_cond_wait(&(Comm->sleepers[targetTaskID]), &(Comm->sleepers_lock));
  		pthread_mutex_unlock(&(Comm->sleepers_lock));
 	}
 
 	// Recheck
-	Message msg = Peek(TaskTable[targetTaskID]);
+	Message msg = Peek(this->TaskTable[targetTaskID]);
 	if (msg == NULL) {
 		return -1;
 	}
@@ -51,17 +43,18 @@ static int getMsgTag(int targetTaskID){
 }
 
 
-static unsigned int getNextTaskID(){
-	pthread_mutex_lock (&TaskIDLock);
-	unsigned int nextID = nextTaskID++;
-	pthread_mutex_unlock (&TaskIDLock);
+static unsigned int getNextTaskID(System this){
+	pthread_mutex_lock(&(this->TaskIDLock));
+	unsigned int nextID = this->nextTaskID;
+	this->nextTaskID++;
+	pthread_mutex_unlock(&(this->TaskIDLock));
 
 	return nextID;
 }
 
 
-static void createMsgQ(unsigned int taskID){
-	TaskTable[taskID] = CreateQueue();
+static void createMsgQ(System this, unsigned int taskID){
+	this->TaskTable[taskID] = CreateQueue();
 }
 
 
@@ -82,6 +75,7 @@ System System_create(){
 	if(newRec == NULL)
 		FatalError("Cannot allocate memory in System_create");
 
+	// Methods
 	newRec->send = send;
 	newRec->receive = receive;
 	newRec->dropMsg = dropMsg;
@@ -90,19 +84,27 @@ System System_create(){
 	newRec->createMsgQ = createMsgQ;;
 	newRec->destroy = destroy;
 
+	// Initialize variables
+	newRec->nextTaskID = 1;
+	int mutex_res = pthread_mutex_init(&(newRec->TaskIDLock), NULL);
+	if (mutex_res) {
+		printf("ERROR; TaskIDLock pthread_mutex_init is %d\n", mutex_res);
+		exit(-1);
+	}
+
 	newRec->shutdown_signal = 0;
-	int mutex_res = pthread_mutex_init(&(newRec->sleepers_lock), NULL);
+	mutex_res = pthread_mutex_init(&(newRec->sleepers_lock), NULL);
 	if (mutex_res) {
 		printf("ERROR; Sleeper lock pthread_mutex_init is %d\n", mutex_res);
 		exit(-1);
 	}
-
 	pthread_mutex_lock(&(newRec->sleepers_lock));
 	for (int i = 0; i < 100; i++) {
 		pthread_cond_init(&(newRec->sleepers[i]), NULL);
 	}
 	pthread_mutex_unlock(&(newRec->sleepers_lock));
 
+	// Wait signal thread
 	int result = pthread_create(&(newRec->threadRef), NULL, run, (void *)newRec);
 	if (result){
 		printf("ERROR; return code from pthread_create() is %d\n", result);
@@ -122,12 +124,12 @@ static void loop_wait_signal(System this) {
 	printf("System loop for wait and signal is started\n");
 
 	while(this->shutdown_signal <= 0) {
-		pthread_mutex_lock (&TaskIDLock);
-		int current_max_id = nextTaskID;
-		pthread_mutex_unlock (&TaskIDLock);
+		pthread_mutex_lock (&(this->TaskIDLock));
+		int current_max_id = this->nextTaskID;
+		pthread_mutex_unlock (&(this->TaskIDLock));
 
 		for (int i = 0; i < current_max_id; i++) {
-			if(!IsEmpty(TaskTable[i])) {
+			if(!IsEmpty(this->TaskTable[i])) {
 				pthread_cond_signal(&(this->sleepers[i]));
 			}
 		}

@@ -40,8 +40,8 @@ int main(void) {
 	BarMsg barMsg = BarMsg_create(BAR_MSG);
 	barMsg->setValue(barMsg, consumer);
 	printf("Sending a Consumer id(%d) message\n", consumer);
-	Comm->send((Message)barMsg, producer_1);
-	Comm->send((Message)barMsg, producer_2);
+	Comm->send(Comm, (Message)barMsg, producer_1);
+	Comm->send(Comm, (Message)barMsg, producer_2);
 	barMsg->destroy(barMsg);
 
 	sleep(100);
