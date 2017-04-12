@@ -15,14 +15,20 @@ System Comm;
 int main(int argc, char *argv[]) {
 
 	// Database initialize the system
-	Comm = System_create();
+	Comm = System_acquire();
 
-	unsigned int server_task = DatabaseTask_create();
-	printf("Database server task id = %d\n", server_task);
+	int next_id = Comm->data->nextTaskID;
+	printf("Data next id = %d\n", next_id);
 
-	sleep(20);
+	next_id = Comm->getNextTaskID(Comm);
+	printf("Function next id = %d\n", next_id);
 
-	Comm->destroy(Comm);
+	//unsigned int server_task = DatabaseTask_create();
+	//printf("Database server task id = %d\n", server_task);
+
+	sleep(1);
+
+	//Comm->destroy(Comm);
 
 	return EXIT_SUCCESS;
 }

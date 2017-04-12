@@ -25,9 +25,10 @@
 #define MAX_TASK 100
 
 typedef struct System *System;
+typedef struct SystemData *SystemData;
 
-struct System {
-
+// System data is stored on shared memory space
+struct SystemData {
 	// Message Q and ID
 	Queue TaskTable[MAX_TASK];
 	unsigned int nextTaskID;
@@ -40,9 +41,16 @@ struct System {
 	pthread_mutex_t sleepers_lock;
 	pthread_cond_t sleepers[MAX_TASK]; // This max limit the # of task, same limit than the task Q
 
+};
+
+// System is stored locally
+struct System {
+
+	struct SystemData* data;
+	int shmid;
 
 	// "class" methods
-	void 	(*send)(System this, Message data, int targetTaskID);
+	void 	(*send)(System this, Message msg_data, int targetTaskID);
 	Message (*receive)(System this, int targetTaskID);
 	void 	(*dropMsg)(System this, int targetTaskID);
 	int 	(*getMsgTag)(System this, int targetTaskID);
@@ -54,7 +62,8 @@ struct System {
 static void *run(void* SystemRef);
 static void loop_wait_signal(System this);
 
-System System_create();
+System System_create(); // Create system and store it in shared memory
+System System_acquire(); // Acquire existing system from shared memory
 
 extern System Comm; // will be declared in the main routine
 
