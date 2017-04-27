@@ -1,47 +1,71 @@
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
 
+// TO REMOVE
+#include "TaskSystem/Messages/BarMsg/BarMsg.h"
+
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 
 static void send(System this, Message msg_data, int targetTaskID){
-	Message sendObj = msg_data->clone(msg_data);
-	Enqueue(this->data->TaskTable[targetTaskID], sendObj);
+	if (this->TaskTable[targetTaskID] == NULL) {
+		char buf[15];
+		sprintf(buf, "/TS_T%d", targetTaskID);
+		this->TaskTable[targetTaskID] = AcquireQueue(buf);
+	}
+
+	// TODO : Need to check enq return value to detect array full, busy loop may be used
+	Enqueue(this->TaskTable[targetTaskID], msg_data);
 }
 
 
 static Message receive(System this, int targetTaskID){
-	return Dequeue(this->data->TaskTable[targetTaskID]);
+	Message msg = Dequeue(this->TaskTable[targetTaskID]);
+	// TODO : Map to rebind and clone
+	if (msg->tid == 1) { // BAR MSG
+		BarMsg_rebind(msg);
+		// Msg is still from shared memory, this need to be done inside the Dequeue or
+		// inside a lock
+		return msg->clone(msg);
+	}
 }
 
 
 static void dropMsg(System this, int targetTaskID){
-	Message msg = Dequeue(this->data->TaskTable[targetTaskID]);
-	if (msg != NULL) {
-		msg->destroy(msg);
+	if (this->TaskTable[targetTaskID] == NULL) {
+		char buf[15];
+		sprintf(buf, "/TS_T%d", targetTaskID);
+		this->TaskTable[targetTaskID] = AcquireQueue(buf);
 	}
 
+	Dequeue(this->TaskTable[targetTaskID]);
 }
 
 static int getMsgTag(System this, int targetTaskID){
+	if (this->TaskTable[targetTaskID] == NULL) {
+		char buf[15];
+		sprintf(buf, "/TS_T%d", targetTaskID);
+		this->TaskTable[targetTaskID] = AcquireQueue(buf);
+	}
 
-	// If Q is empty, we go to sleep
-	if(IsEmpty(this->data->TaskTable[targetTaskID])) {
+	// // If Q is empty, we go to sleep
+	if(IsEmpty(this->TaskTable[targetTaskID])) {
 		pthread_mutex_lock(&(this->data->sleepers_lock));
  		pthread_cond_wait(&(this->data->sleepers[targetTaskID]), &(this->data->sleepers_lock));
  		pthread_mutex_unlock(&(this->data->sleepers_lock));
 	}
 
 	// Recheck
-	Message msg = Peek(this->data->TaskTable[targetTaskID]);
+	Message msg = Peek(this->TaskTable[targetTaskID]);
 	if (msg == NULL) {
 		return -1;
 	}
-	return msg->getTag(msg);
+	return msg->tag; // USING METHOD WILL FAIL IF NOT REBOUND
 }
 
 
@@ -56,7 +80,9 @@ static unsigned int getNextTaskID(System this){
 
 
 static void createMsgQ(System this, unsigned int taskID){
-	this->data->TaskTable[taskID] = CreateQueue();
+	char buf[15];
+	sprintf(buf, "/TS_T%d", taskID);
+	this->TaskTable[taskID] = CreateQueue(buf);
 }
 
 
@@ -65,8 +91,15 @@ static void destroy(System this){
 	// Wait for signal/wait loop to finish
 	pthread_join(this->data->threadRef, NULL);
 
+	// Detach each task shared memory
+	for (int i = 1; i < this->data->nextTaskID; i++) {
+		char buf[15];
+		sprintf(buf, "/TS_T%d", i);
+		DeleteQueue(buf);
+	}
+
 	 // Detach and remove shared memory
-	shmctl(this->shmid, IPC_RMID, NULL);
+	shm_unlink(SYSTEM_SHARED_MEM_NAME);
 }
 
 /*
@@ -77,16 +110,21 @@ static void destroy(System this){
 System System_create(){
 	// Create the shard space
 	int size = sizeof(struct SystemData);
-	key_t key = ftok(SYSTEM_SHARED_MEM_NAME, 'b');
-	int tmp_shmid = shmget(key, size, IPC_CREAT | 0666);
-	if (tmp_shmid < 0) {
-		printf("ERROR; Error creating shared segment \n");
+	// TODO : Use O_EXCL to detect existance
+	int fd = shm_open(SYSTEM_SHARED_MEM_NAME, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+	if (fd < 0) {
+		printf("ERROR; Error creating shared segment %d \n", errno);
 		exit(-1);
 	}
 
-	void* addr = shmat(tmp_shmid, NULL, 0);
-	if ((intptr_t)addr == -1) {
-		printf("ERROR; Shmat failed %d\n", errno);
+	if (ftruncate(fd, size) == -1) {
+		printf("ERROR; Error truncating shared segment \n");
+		exit(-1);
+	}
+
+	void* addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (addr == MAP_FAILED) {
+		printf("ERROR; mmap failed %d\n", errno);
 		exit(-1);	
 	}
 
@@ -94,7 +132,6 @@ System System_create(){
 	System newRec = malloc(sizeof(struct System));
 	if(newRec == NULL)
 		FatalError("Cannot allocate memory in System_create");
-	newRec->shmid = tmp_shmid;
 	newRec->data = shared_data;
 
 	// Methods
@@ -105,6 +142,11 @@ System System_create(){
 	newRec->getNextTaskID = getNextTaskID;
 	newRec->createMsgQ = createMsgQ;;
 	newRec->destroy = destroy;
+
+	// Local addr and SHM-id
+	for (int i = 0; i < MAX_TASK; i++) {
+		newRec->TaskTable[i] = NULL;
+	}
 
 	// Initialize ID and ID mutex
 	newRec->data->nextTaskID = 1;
@@ -152,23 +194,21 @@ System System_create(){
 System System_acquire() {
 	// Get the shared memory
 	int size = sizeof(struct SystemData);
-	key_t key = ftok(SYSTEM_SHARED_MEM_NAME, 'b');
-	int tmp_shmid = shmget(key, size, 0);
-	if (tmp_shmid < 0) {
-		printf("ERROR; Error getting shared segment \n");
+	int fd = shm_open(SYSTEM_SHARED_MEM_NAME, O_RDWR, S_IRUSR | S_IWUSR);
+	if (fd < 0) {
+		printf("ERROR; Error getting shared segment %d \n", errno);
 		exit(-1);
 	}
 
-	void* addr = shmat(tmp_shmid, NULL, 0);
-	if ((intptr_t)addr == -1) {
-		printf("ERROR; Shmat failed %d\n", errno);
+	void* addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (addr == MAP_FAILED) {
+		printf("ERROR; mmap failed %d\n", errno);
 		exit(-1);	
 	}
 
 	SystemData shared_data = (SystemData)addr;
 
 	System newRec = malloc(sizeof(struct System));
-	newRec->shmid = tmp_shmid;
 	newRec->data = shared_data;
 
 	// Methods
@@ -180,7 +220,13 @@ System System_acquire() {
 	newRec->createMsgQ = createMsgQ;;
 	newRec->destroy = destroy;
 
+	// Local addr to Q only
+	for (int i = 0; i < MAX_TASK; i++) {
+		newRec->TaskTable[i] = NULL;
+	}
+
 	return newRec;
+	return NULL;
 }
 
 static void* run(void* SystemRef) {
@@ -198,7 +244,7 @@ static void loop_wait_signal(System this) {
 		pthread_mutex_unlock (&(this->data->TaskIDLock));
 
 		for (int i = 0; i < current_max_id; i++) {
-			if(!IsEmpty(this->data->TaskTable[i])) {
+			if(!IsEmpty(this->TaskTable[i])) {
 				pthread_cond_signal(&(this->data->sleepers[i]));
 			}
 		}

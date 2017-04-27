@@ -18,10 +18,10 @@
 
 #include <pthread.h>
 
-#include "TaskSystem/UnboundedMsgQ.h"
+#include "TaskSystem/CircularMsgQ.h"
 #include "TaskSystem/Messages/Message.h"
 
-#define SYSTEM_SHARED_MEM_NAME "/tmp/TS_SYSTEM"
+#define SYSTEM_SHARED_MEM_NAME "/TS_System"
 #define MAX_TASK 100
 
 typedef struct System *System;
@@ -29,8 +29,7 @@ typedef struct SystemData *SystemData;
 
 // System data is stored on shared memory space
 struct SystemData {
-	// Message Q and ID
-	Queue TaskTable[MAX_TASK];
+	// Task ID
 	unsigned int nextTaskID;
 	pthread_mutex_t TaskIDLock;
 
@@ -45,9 +44,9 @@ struct SystemData {
 
 // System is stored locally
 struct System {
-
 	struct SystemData* data;
-	int shmid;
+
+	Queue TaskTable[MAX_TASK];
 
 	// "class" methods
 	void 	(*send)(System this, Message msg_data, int targetTaskID);

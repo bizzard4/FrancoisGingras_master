@@ -20,11 +20,16 @@ struct Message {
 
 	/* members */
 	int tag;
+	int tid;
+	int msg_size;
 
 	// methods
 	int 	(*getTag)(Message this);
 	Message (*clone)(Message this);
 	void 	(*destroy)(Message this);
+
+	// Serialization
+	int (*writeAt)(Message this, void* addr);
 
 };
 

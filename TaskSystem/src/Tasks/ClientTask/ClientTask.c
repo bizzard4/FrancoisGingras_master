@@ -1,4 +1,4 @@
-#include "TaskSystem/Tasks/DatabaseTask/DatabaseTask.h"
+#include "TaskSystem/Tasks/ClientTask/ClientTask.h"
 
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
@@ -15,7 +15,7 @@
 
 // this file contains code that the language compiler/runtime
 // would generated automatically
-#include "TaskSystem/Tasks/DatabaseTask/generated.h"
+#include "TaskSystem/Tasks/ClientTask/generated.h"
 
 
 
@@ -35,29 +35,30 @@ int done;
 /*
  * This is the "main" method for the thread
  */
-static void start(DatabaseTask this){
-	printf("Database task has been started\n");
+static void start(ClientTask this){
+	printf("Client task has been started\n");
+
+	// Get the database task id
+	// TODO
 
 	// Response to 10 requests
 	for (int i = 0; i < 100; i++) {
-		// Get a request
-		receive(this);
-
-		// Response to the request (int for now)
-		BarMsg res = BarMsg_create(RESPONSE_MSG);
-		res->setValue(res, i);
-		send(this, (Message)res, this->current_requester_task_id); 
+		// Send a request
+		BarMsg res = BarMsg_create(REQUEST_MSG);
+		res->setValue(res, this->taskID);
+		send(this, (Message)res, 1); 
 		res->destroy(res);
+
+		// Get the response
+		receive(this);
 	}
 
-	sleep(1); // Safety, if the main process close before the last message is read from 
-	// the client, then we enter in a infinite loop
 	done = 1;
 }
 
 
 
-static void receive(DatabaseTask this){
+static void receive(ClientTask this){
 	int tag = Comm->getMsgTag(Comm, this->taskID);
 	while (tag < 0) {
 		tag = Comm->getMsgTag(Comm, this->taskID);
@@ -67,11 +68,11 @@ static void receive(DatabaseTask this){
 
 	// match the message to the right message "handler"
 	switch (tag) {
-	case REQUEST_MSG:
-		msg = Comm->receive(Comm, this->taskID);
-		handle_RequestMsg(this, (BarMsg)msg);
+	case REQUEST_MSG: // Should never receive this
 		break;
-	case RESPONSE_MSG: // Should never receive this
+	case RESPONSE_MSG:
+		msg = Comm->receive(Comm, this->taskID);
+		handle_ResponseMsg(this, (BarMsg)msg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
@@ -79,9 +80,8 @@ static void receive(DatabaseTask this){
 	}
 }
 
-static void handle_RequestMsg(DatabaseTask this, BarMsg barMsg) {
-	printf("Database task received a request (val=%d) \n", barMsg->value);
-	this->current_requester_task_id = barMsg->value;
+static void handle_ResponseMsg(ClientTask this, BarMsg barMsg) {
+	printf("Client task received a response res=%d\n", barMsg->value);
 }
 
 

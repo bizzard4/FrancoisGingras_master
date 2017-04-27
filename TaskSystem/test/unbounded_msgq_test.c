@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-#include "TaskSystem/System.h"
+//#include "TaskSystem/System.h"
 #include "test_util.h"
 #include "TaskSystem/UnboundedMsgQ.h"
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
 
-System Comm;
+//System Comm;
 
 // message tags
 enum {TEXT_MSG, BAR_MSG};

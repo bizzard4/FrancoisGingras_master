@@ -28,6 +28,9 @@ static BarMsg clone(BarMsg this){
 
 	BarMsg tmp = BarMsg_create(0);
 	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
+
 	tmp->value = this->value;
 
 	return tmp;
@@ -35,6 +38,19 @@ static BarMsg clone(BarMsg this){
 
 static void destroy(BarMsg this){
 	free(this);
+}
+
+static int writeAt(BarMsg this, void* addr) {
+	printf("Writing message at %p\n", addr);
+
+	BarMsg tmp = (BarMsg)addr;
+	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
+
+	tmp->value = this->value;
+
+	return sizeof(struct BarMsg);
 }
 
 
