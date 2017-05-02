@@ -41,8 +41,6 @@ static void destroy(BarMsg this){
 }
 
 static int writeAt(BarMsg this, void* addr) {
-	printf("Writing message at %p\n", addr);
-
 	BarMsg tmp = (BarMsg)addr;
 	tmp->tag = this->tag;
 	tmp->tid = this->tid;
