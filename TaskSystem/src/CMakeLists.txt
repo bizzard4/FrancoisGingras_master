@@ -5,7 +5,6 @@ set(SOURCES
   MsgQueue/CircularMsgQ.c
   Messages/TextMsg/TextMsg.c 
   Messages/BarMsg/BarMsg.c 
-  Messages/ProduceMsg/ProduceMsg.c
   Messages/TopologyMsg/TopologyMsg.c
   Messages/IntArrayMsg/IntArrayMsg.c
   Messages/DoneMsg/DoneMsg.c
@@ -14,8 +13,6 @@ set(SOURCES
   Tasks/PapaTask/PapaTask.c 
   Tasks/FooTask/FooTask.c 
   Tasks/BazTask/BazTask.c
-  Tasks/ConsumerTask/ConsumerTask.c
-  Tasks/ProducerTask/ProducerTask.c
   Tasks/SampleSortTask/SampleSortTask.c
   Tasks/BucketTask/BucketTask.c
   Tasks/DatabaseTask/DatabaseTask.c
