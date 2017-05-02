@@ -27,25 +27,36 @@ static TextMsg clone(TextMsg this){
 
 	TextMsg tmp = TextMsg_create(0);
 	tmp->tag = this->tag;
-	if(strdup(this->msg) != NULL)
-		tmp->msg = strdup(this->msg); // we MUST copy the string!
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
+	strcpy(tmp->msg, this->msg);
 
 	return tmp;
 }
 
 static void destroy(TextMsg this){
-	free(this->msg);
 	free(this);
+}
+
+static int writeAt(TextMsg this, void* addr) {
+	TextMsg tmp = (TextMsg)addr;
+	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
+
+	strcpy(tmp->msg, this->msg);
+
+	return sizeof(struct TextMsg);
 }
 
 
 static char* getMsg(TextMsg this){
-	return strdup(this->msg); // we MUST return a copy of the string!
+	return this->msg;
 }
 
 
 static void setMsg(TextMsg this, char* msg){
-	this->msg = strdup(msg); // we MUST create a copy of the string!
+	strcpy(this->msg, msg);
 }
 
 

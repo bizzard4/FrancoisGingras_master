@@ -3,6 +3,7 @@
 
 // TO REMOVE
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
+#include "TaskSystem/Messages/TextMsg/TextMsg.h"
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -31,6 +32,9 @@ static Message receive(System this, int targetTaskID){
 		BarMsg_rebind(msg);
 		// Msg is still from shared memory, this need to be done inside the Dequeue or
 		// inside a lock
+		return msg->clone(msg);
+	} else if (msg->tid == 2) {
+		TextMsg_rebind(msg);
 		return msg->clone(msg);
 	}
 }

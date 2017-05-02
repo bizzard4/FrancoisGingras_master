@@ -16,7 +16,7 @@ System Comm;
 int main(void) {
 
 	Comm = System_create();
-	printf("Hello Dad\n");
+	printf("Hello task system\n");
 
 	// create parent task. It will start running immediately.
 	unsigned int taskX = PapaTask_create();

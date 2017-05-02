@@ -42,18 +42,18 @@ BarMsg BarMsg_create(int tag){
 
 // Rebind method only
 void BarMsg_rebind(Message msg) {
-	BarMsg bar_msg = (BarMsg)msg;
+	BarMsg rebind_msg = (BarMsg)msg;
 
-	bar_msg->getTag = getTag;
-	bar_msg->clone = clone;
-	bar_msg->destroy = destroy;
+	rebind_msg->getTag = getTag;
+	rebind_msg->clone = clone;
+	rebind_msg->destroy = destroy;
 
-	bar_msg->writeAt = writeAt;
+	rebind_msg->writeAt = writeAt;
 
 	// Start of bar msg
 
-	bar_msg->getValue = getValue;
-	bar_msg->setValue = setValue;
+	rebind_msg->getValue = getValue;
+	rebind_msg->setValue = setValue;
 }
 
 
