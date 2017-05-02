@@ -14,12 +14,6 @@ set(SOURCES
   Tasks/PapaTask/PapaTask.c 
   Tasks/FooTask/FooTask.c 
   Tasks/BazTask/BazTask.c
-  Tasks/DirectSendTask/DirectSendTask.c
-  Tasks/DirectReceiveTask/DirectReceiveTask.c
-  Tasks/DirectMissSendTask/DirectMissSendTask.c
-  Tasks/DirectMissReceiveTask/DirectMissReceiveTask.c
-  Tasks/LoopSendTask/LoopSendTask.c
-  Tasks/LoopReceiveTask/LoopReceiveTask.c
   Tasks/ConsumerTask/ConsumerTask.c
   Tasks/ProducerTask/ProducerTask.c
   Tasks/SampleSortTask/SampleSortTask.c

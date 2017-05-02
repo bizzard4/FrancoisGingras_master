@@ -12,15 +12,6 @@ target_link_libraries(simple_task_test TaskSystem)
 add_executable(producer_consumer_test producer_consumer_test.c)
 target_link_libraries(producer_consumer_test TaskSystem)
 
-add_executable(loop_task_test loop_task_test.c)
-target_link_libraries(loop_task_test TaskSystem)
-
-add_executable(direct_receive_test direct_receive_test.c)
-target_link_libraries(direct_receive_test TaskSystem)
-
-add_executable(direct_miss_test direct_miss_test.c)
-target_link_libraries(direct_miss_test TaskSystem)
-
 add_executable(samplesort_test samplesort_test.c)
 target_link_libraries(samplesort_test TaskSystem)
 
