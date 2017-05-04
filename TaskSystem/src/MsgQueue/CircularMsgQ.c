@@ -25,6 +25,7 @@ struct Queue
 	unsigned int head; // Offset of start addr
 	unsigned int tail; // Offset of start addr
 	unsigned int size;
+	int rollover_position; // offset where tail went back to start, -1 = no rollover
 };
 
 int IsEmpty_not_safe(Queue Q);
@@ -52,8 +53,10 @@ Queue CreateQueue(const char* unique_name) {
 	Queue Q = (Queue)addr;
 
 	Q->size = 0;
+	printf("Size of Q struct %d\n", sizeof(struct Queue));
 	Q->head = sizeof(struct Queue);
 	Q->tail = sizeof(struct Queue);
+	Q->rollover_position = -1;
 
 	pthread_mutexattr_t m_attr;
 	pthread_mutexattr_init(&m_attr);
@@ -117,12 +120,38 @@ int IsEmpty_not_safe(Queue Q) {
 
 int Enqueue(Queue Q, ElementType item) {
 	if ((Q != NULL) && (item != NULL)) {	
-		// Need to check upper bound
-		// TODO : Set a marker when the struct is back at the beginning
-		// TODO : Check if tail > head
 		pthread_mutex_lock (&(Q->QLock));
-		int size = item->writeAt(item, (void*)((long)Q + Q->tail));
-		Q->tail += size;
+
+		// Predict future tail position
+		int future_tail = Q->tail + item->msg_size;
+		int has_to_rollover = -1;
+		if (Q->rollover_position == -1) {
+			if (future_tail > Q_SIZE) {
+				future_tail = sizeof(struct Queue) + item->msg_size;
+				has_to_rollover = Q->tail;
+				//printf("Cirvular array will rollover %d\n", has_to_rollover);
+			}
+
+			// Full array protection in case of overflow
+			if (has_to_rollover != -1) {
+				if (future_tail > Q->head) {
+					//printf("Circular array full\n");
+					pthread_mutex_unlock (&(Q->QLock));
+					return 0;
+				}
+			}
+		} else { // Already overflow
+			if (future_tail > Q->head) {
+					//printf("Circular array full\n");
+					pthread_mutex_unlock (&(Q->QLock));
+					return 0;
+			}
+		}
+
+		// Write to future
+		int size = item->writeAt(item, (void*)((long)Q + future_tail - item->msg_size));
+		Q->tail = future_tail;
+		Q->rollover_position = has_to_rollover; 
 		Q->size++;
 		pthread_mutex_unlock (&(Q->QLock));
 
@@ -139,12 +168,15 @@ ElementType Dequeue(Queue Q) {
 	if ((Q != NULL) && (!IsEmpty_not_safe(Q))) {
 		// First we read the message part, and using the tid we map
 		// to the right rebuilder method
-		
-		Message message_part = (Message)((long)Q + Q->head);
-		// TODO : Map HERE
-		if (message_part->tid == 1) {
-			Q->head += sizeof(struct BarMsg);
+		int read_pos = Q->head;
+		if (Q->head == Q->rollover_position) {
+			//printf("Rollover detected\n");
+			read_pos = sizeof(struct Queue);
+			Q->rollover_position = -1;
 		}
+		
+		Message message_part = (Message)((long)Q + read_pos);
+		Q->head = read_pos + message_part->msg_size;
 		Q->size--;
 		
 		toret = message_part;

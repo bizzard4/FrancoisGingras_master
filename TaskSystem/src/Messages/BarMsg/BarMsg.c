@@ -48,7 +48,7 @@ static int writeAt(BarMsg this, void* addr) {
 
 	tmp->value = this->value;
 
-	return sizeof(struct BarMsg);
+	return this->msg_size;
 }
 
 
