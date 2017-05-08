@@ -127,15 +127,6 @@ int main(void) {
 	printf("IsEmpty=%d\n", IsEmpty(q));
 	printf("IsRollover=%d\n", q->rollover_position);
 
-	// Should be empty
-
-	// for (int i = 0; i < 10; i++) {
-	// 	BarMsg deq = (BarMsg)Dequeue(q);
-	// 	printf("Dequeued msg with tag=%d and value=%d\n", deq->tag, deq->value);
-	// }
-
-	// TODO : Test full Q + circularity
-
 	DeleteQueue("/TEST_CIRCULAR_MSG_Q");
 
 	printf("Success\n");

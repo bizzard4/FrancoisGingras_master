@@ -18,6 +18,8 @@ static int getTag(DoneMsg this){
 static DoneMsg clone(DoneMsg this){
 	DoneMsg tmp = DoneMsg_create(this->tag);
 	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
 
 	tmp->success = this->success;
 
@@ -26,6 +28,19 @@ static DoneMsg clone(DoneMsg this){
 
 static void destroy(DoneMsg this){
 	free(this);
+}
+
+static int writeAt(DoneMsg this, void* addr) {
+	DoneMsg tmp = (DoneMsg)addr;
+	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
+
+	// Start of done msg
+
+	tmp->success = this->success;
+
+	return this->msg_size;
 }
 
 

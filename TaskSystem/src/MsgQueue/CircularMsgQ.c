@@ -53,7 +53,6 @@ Queue CreateQueue(const char* unique_name) {
 	Queue Q = (Queue)addr;
 
 	Q->size = 0;
-	printf("Size of Q struct %d\n", sizeof(struct Queue));
 	Q->head = sizeof(struct Queue);
 	Q->tail = sizeof(struct Queue);
 	Q->rollover_position = -1;

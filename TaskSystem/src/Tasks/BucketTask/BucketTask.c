@@ -19,7 +19,7 @@
 // would generated automatically
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
-//#define DEBUG_DATA // If set, bucket will display all data 
+#define DEBUG_DATA // If set, bucket will display all data 
 //#define DEBUG_OUTPUT // Is set, the ouput will be formated to be easily formatable, warning, this affect performance.
 
 // To use validate_result script, set DEBUG_OUTPUT, but unset DEBUG_DATA

@@ -18,8 +18,9 @@ static int getTag(TopologyMsg this){
 static TopologyMsg clone(TopologyMsg this){
 	TopologyMsg tmp = TopologyMsg_create(this->tag);
 	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
 
-	//printf("TopologyMsg - Clone call with tag %d\n", this->tag);
 
 	tmp->bucket_count = this->bucket_count;
 	tmp->root_id = this->root_id;
@@ -38,8 +39,29 @@ static void destroy(TopologyMsg this){
 	free(this);
 }
 
+static int writeAt(TopologyMsg this, void* addr) {
+	TopologyMsg tmp = (TopologyMsg)addr;
+	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
+
+	// Private members
+
+	tmp->bucket_count = this->bucket_count;
+	tmp->root_id = this->root_id;
+	tmp->sample_size = this->sample_size;
+	tmp->data_size = this->data_size;
+
+	// Allocate the array after the struct and update msg_size
+	tmp->bucket_ids = (unsigned int*)memcpy((void*)((long)addr + sizeof(struct TopologyMsg)), this->bucket_ids, this->bucket_count * sizeof(unsigned int));
+	this->msg_size += this->bucket_count * sizeof(unsigned int);
+
+	return this->msg_size;
+}
+
 static void setBucketIds(TopologyMsg this, int count, unsigned int ids[]) {
 	this->bucket_count = count;
+	this->msg_size = sizeof(struct TopologyMsg) + (count * sizeof(unsigned int));
 
 	this->bucket_ids = malloc(count * sizeof(unsigned int));
 	for (int i = 0; i < count; i++) {

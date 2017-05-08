@@ -2,6 +2,8 @@
 #ifndef TOPOLOGYMSG_H_
 #define TOPOLOGYMSG_H_
 
+#include "TaskSystem/Messages/Message.h"
+
 
 typedef struct TopologyMsg *TopologyMsg;
 
@@ -9,11 +11,16 @@ struct TopologyMsg {
 
 	/* parent class members */
 	int tag;
+	int tid;
+	int msg_size;
 
 	// methods
 	int 	(*getTag)(TopologyMsg this);
 	TopologyMsg 	(*clone)(TopologyMsg this);
 	void 	(*destroy)(TopologyMsg this);
+
+	// Serialization
+	int (*writeAt)(TopologyMsg this, void* addr);
 
 	// Msg private members
 	int bucket_count;
@@ -29,5 +36,6 @@ struct TopologyMsg {
 
 
 TopologyMsg TopologyMsg_create();
+void TopologyMsg_rebind(Message msg);
 
 #endif /* TOPOLOGYMSG_H_ */

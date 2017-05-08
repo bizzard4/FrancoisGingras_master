@@ -18,8 +18,10 @@ static int getTag(IntArrayMsg this){
 static IntArrayMsg clone(IntArrayMsg this){
 	IntArrayMsg tmp = IntArrayMsg_create(this->tag);
 	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
 
-	//printf("IntArrayMsg - Clone call with tag %d\n", this->tag);
+	// Start of int array msg
 
 	tmp->size = this->size;
 	tmp->values = malloc(this->size * sizeof(int)); // Deep copy
@@ -33,6 +35,21 @@ static IntArrayMsg clone(IntArrayMsg this){
 static void destroy(IntArrayMsg this){
 	free(this->values);
 	free(this);
+}
+
+static int writeAt(IntArrayMsg this, void* addr) {
+	IntArrayMsg tmp = (IntArrayMsg)addr;
+	tmp->tag = this->tag;
+	tmp->tid = this->tid;
+	tmp->msg_size = this->msg_size;
+
+	// Start of int array msg
+	tmp->size = this->size;
+	tmp->values = (int*)memcpy((void*)((long)addr + sizeof(struct IntArrayMsg)), this->values, this->size * sizeof(int));
+	this->msg_size += this->size * sizeof(int);
+
+
+	return this->msg_size;
 }
 
 static void setValues(IntArrayMsg this, int count, int val[]) {

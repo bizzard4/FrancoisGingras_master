@@ -4,6 +4,11 @@
 // TO REMOVE
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/Messages/TextMsg/TextMsg.h"
+#include "TaskSystem/Messages/RefIntArrayMsg/RefIntArrayMsg.h"
+#include "TaskSystem/Messages/TopologyMsg/TopologyMsg.h"
+#include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
+#include "TaskSystem/Messages/DoneMsg/DoneMsg.h"
+#include "TaskSystem/Messages/RefTwoDimIntArrayMsg/RefTwoDimIntArrayMsg.h"
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -35,6 +40,21 @@ static Message receive(System this, int targetTaskID){
 		return msg->clone(msg);
 	} else if (msg->tid == 2) {
 		TextMsg_rebind(msg);
+		return msg->clone(msg);
+	} else if (msg->tid == 3) {
+		RefIntArrayMsg_rebind(msg);
+		return msg->clone(msg);
+	} else if (msg->tid == 4) {
+		TopologyMsg_rebind(msg);
+		return msg->clone(msg);
+	} else if (msg->tid == 5) {
+		IntArrayMsg_rebind(msg);
+		return msg->clone(msg);
+	} else if (msg->tid == 6) {
+		DoneMsg_rebind(msg);
+		return msg->clone(msg);
+	} else if (msg->tid == 7) {
+		RefTwoDimIntArrayMsg_rebind(msg);
 		return msg->clone(msg);
 	}
 }
