@@ -57,6 +57,9 @@ void IntArrayMsg_rebind(Message msg) {
 	rebind_msg->setValues = setValues;
 	rebind_msg->getSize = getSize;
 	rebind_msg->getValue = getValue;
+
+	// Rebind the pointer to the end of the struct position
+	rebind_msg->values = (void*)((long)msg + sizeof(struct IntArrayMsg));
 }
 
 #endif /* INTARRAYMSG_GENERATED_H_ */

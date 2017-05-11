@@ -55,6 +55,7 @@ static int writeAt(IntArrayMsg this, void* addr) {
 static void setValues(IntArrayMsg this, int count, int val[]) {
 	this->size = count;
 	this->values = malloc(this->size * sizeof(int));
+	this->msg_size = sizeof(struct IntArrayMsg) + (count * sizeof(int));
 	for (int i = 0; i < count; i++) {
 		this->values[i] = val[i];
 	}

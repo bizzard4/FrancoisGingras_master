@@ -23,7 +23,7 @@ sorted_input = sorted(sorted_input)
 # Starting to read the output file
 output_file = open(sys.argv[3])
 for line in output_file:
-	if line.startswith("Splitter"): # Parse the splitter
+	if line.startswith("Splitter :"): # Parse the splitter
 		print("Splitter line :", line)
 		splitted = line.split(" ")
 		for ki in range(2, K+1): # Get the k-1 splitters

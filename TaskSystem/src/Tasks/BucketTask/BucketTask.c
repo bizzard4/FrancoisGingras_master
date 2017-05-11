@@ -19,7 +19,7 @@
 // would generated automatically
 #include "TaskSystem/Tasks/BucketTask/generated.h"
 
-#define DEBUG_DATA // If set, bucket will display all data 
+//#define DEBUG_DATA // If set, bucket will display all data 
 //#define DEBUG_OUTPUT // Is set, the ouput will be formated to be easily formatable, warning, this affect performance.
 
 // To use validate_result script, set DEBUG_OUTPUT, but unset DEBUG_DATA
@@ -59,6 +59,13 @@ static void start(BucketTask this) {
 
 	// Get topology
 	receive(this);
+#ifdef DEBUG_DATA
+	printf("Bucket %d tolopogy=", this->taskID);
+	for (int i = 0; i < this->bucket_count; i++) {
+		printf("%d ", this->bucket_ids[i]);
+	}
+	printf("\n");
+#endif
 
 	// Get ref to data
 	struct timespec get_sample_start, get_sample_end;
@@ -299,6 +306,7 @@ static void handle_DataRefMsg(BucketTask this, RefIntArrayMsg refintarrayMsg) {
 
 static void handle_SplitterMsg(BucketTask this, IntArrayMsg intarrayMsg) {
 	printf("Bucket %d received splitters\n", this->taskID);
+
 	this->splitter_size = intarrayMsg->getSize(intarrayMsg);
 	this->splitters = malloc(intarrayMsg->getSize(intarrayMsg) * sizeof(int));
 	for (int i = 0; i < intarrayMsg->getSize(intarrayMsg); i++) {

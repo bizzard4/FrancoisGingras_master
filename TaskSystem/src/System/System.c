@@ -26,7 +26,10 @@ static void send(System this, Message msg_data, int targetTaskID){
 	}
 
 	// TODO : Need to check enq return value to detect array full, busy loop may be used
-	Enqueue(this->TaskTable[targetTaskID], msg_data);
+	int res = Enqueue(this->TaskTable[targetTaskID], msg_data);
+	if (res == 0) {
+		printf("System error: SEND FAILED to Task %d\n", targetTaskID);
+	}
 }
 
 
