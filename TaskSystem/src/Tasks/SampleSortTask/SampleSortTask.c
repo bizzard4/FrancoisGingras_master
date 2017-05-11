@@ -159,12 +159,9 @@ static void start(SampleSortTask this) {
 	IntArrayMsg splitters_msg = IntArrayMsg_create(SPLITTER_MSG);
 	splitters_msg->setValues(splitters_msg, this->K, splitters);
 	for (int ki = 0; ki < this->K; ki++) {
-		//sleep(1);
 		send(this, (Message)splitters_msg, buckets[ki]);
 	}
-
-	//sleep(1);
-	//splitters_msg->destroy(splitters_msg);
+	splitters_msg->destroy(splitters_msg);
 	clock_gettime(CLOCK_MONOTONIC, &bucket_spawn_end);
 
 	printf("Phase 1 is done\n");
