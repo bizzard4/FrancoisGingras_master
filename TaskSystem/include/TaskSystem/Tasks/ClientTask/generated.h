@@ -17,7 +17,7 @@ static void receive(ClientTask this);
 static void *run(void *ClientTaskRef);
 static void start(ClientTask this);
 
-static void handle_ResponseMsg(ClientTask this, BarMsg barMsg);
+static void handle_ResponseMsg(ClientTask this, ResponseMsg responseMsg);
 
 
 // The ClientTask "class"

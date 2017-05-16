@@ -10,6 +10,8 @@ set(SOURCES
   Messages/DoneMsg/DoneMsg.c
   Messages/RefIntArrayMsg/RefIntArrayMsg.c
   Messages/RefTwoDimIntArrayMsg/RefTwoDimIntArrayMsg.c
+  Messages/RequestMsg/RequestMsg.c
+  Messages/ResponseMsg/ResponseMsg.c
   Tasks/PapaTask/PapaTask.c 
   Tasks/FooTask/FooTask.c 
   Tasks/BazTask/BazTask.c

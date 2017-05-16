@@ -46,9 +46,7 @@ static int writeAt(IntArrayMsg this, void* addr) {
 	// Start of int array msg
 	tmp->size = this->size;
 	tmp->values = (int*)memcpy((void*)((long)addr + sizeof(struct IntArrayMsg)), this->values, this->size * sizeof(int));
-	this->msg_size += this->size * sizeof(int);
-
-
+	
 	return this->msg_size;
 }
 

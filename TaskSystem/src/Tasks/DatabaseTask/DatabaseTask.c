@@ -3,7 +3,8 @@
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
 
-#include "TaskSystem/Messages/BarMsg/BarMsg.h"
+#include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
+#include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,8 +45,8 @@ static void start(DatabaseTask this){
 		receive(this);
 
 		// Response to the request (int for now)
-		BarMsg res = BarMsg_create(RESPONSE_MSG);
-		res->setValue(res, i);
+		ResponseMsg res = ResponseMsg_create(RESPONSE_MSG);
+		res->code = 200;
 		send(this, (Message)res, this->current_requester_task_id); 
 		res->destroy(res);
 	}
@@ -69,7 +70,7 @@ static void receive(DatabaseTask this){
 	switch (tag) {
 	case REQUEST_MSG:
 		msg = Comm->receive(Comm, this->taskID);
-		handle_RequestMsg(this, (BarMsg)msg);
+		handle_RequestMsg(this, (RequestMsg)msg);
 		break;
 	case RESPONSE_MSG: // Should never receive this
 		break;
@@ -79,9 +80,9 @@ static void receive(DatabaseTask this){
 	}
 }
 
-static void handle_RequestMsg(DatabaseTask this, BarMsg barMsg) {
-	printf("Database task received a request (val=%d) \n", barMsg->value);
-	this->current_requester_task_id = barMsg->value;
+static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
+	printf("Database task received a request (val=%d) \n", requestMsg->sender_task_id);
+	this->current_requester_task_id = requestMsg->sender_task_id;
 }
 
 

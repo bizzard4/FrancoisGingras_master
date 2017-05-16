@@ -3,7 +3,8 @@
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
 
-#include "TaskSystem/Messages/BarMsg/BarMsg.h"
+#include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
+#include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,13 +42,14 @@ static void start(ClientTask this){
 	// Get the database task id
 	// TODO
 
-	// Response to 10 requests
-	for (int i = 0; i < 100; i++) {
+	// Do 10 request
+	for (int i = 0; i < 50; i++) {
 		// Send a request
-		BarMsg res = BarMsg_create(REQUEST_MSG);
-		res->setValue(res, this->taskID);
-		send(this, (Message)res, 1); 
-		res->destroy(res);
+		RequestMsg req = RequestMsg_create(REQUEST_MSG);
+		req->sender_task_id = this->taskID;
+		req->request_type = SELECT_REQUEST;
+		send(this, (Message)req, 1); 
+		req->destroy(req);
 
 		// Get the response
 		receive(this);
@@ -72,7 +74,7 @@ static void receive(ClientTask this){
 		break;
 	case RESPONSE_MSG:
 		msg = Comm->receive(Comm, this->taskID);
-		handle_ResponseMsg(this, (BarMsg)msg);
+		handle_ResponseMsg(this, (ResponseMsg)msg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
@@ -80,8 +82,8 @@ static void receive(ClientTask this){
 	}
 }
 
-static void handle_ResponseMsg(ClientTask this, BarMsg barMsg) {
-	printf("Client task received a response res=%d\n", barMsg->value);
+static void handle_ResponseMsg(ClientTask this, ResponseMsg responseMsg) {
+	printf("Client task received a response code=%d\n", responseMsg->code);
 }
 
 

@@ -17,7 +17,7 @@ static void receive(DatabaseTask this);
 static void *run(void *DatabaseTaskRef);
 static void start(DatabaseTask this);
 
-static void handle_RequestMsg(DatabaseTask this, BarMsg barMsg);
+static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg);
 
 
 // The DatabaseTask "class"

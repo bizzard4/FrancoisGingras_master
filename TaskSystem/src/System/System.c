@@ -9,6 +9,8 @@
 #include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
 #include "TaskSystem/Messages/DoneMsg/DoneMsg.h"
 #include "TaskSystem/Messages/RefTwoDimIntArrayMsg/RefTwoDimIntArrayMsg.h"
+#include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
+#include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -59,6 +61,15 @@ static Message receive(System this, int targetTaskID){
 	} else if (msg->tid == 7) {
 		RefTwoDimIntArrayMsg_rebind(msg);
 		return msg->clone(msg);
+	} else if (msg->tid == 8) {
+		RequestMsg_rebind(msg);
+		return msg->clone(msg);
+	} else if (msg->tid == 9) {
+		ResponseMsg_rebind(msg);
+		return msg->clone(msg);
+	} else {
+		printf("SYSTEM ERROR : Unkown message type\n");
+		exit(-1);
 	}
 }
 
