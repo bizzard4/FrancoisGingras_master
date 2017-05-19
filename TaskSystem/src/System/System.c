@@ -31,6 +31,7 @@ static void send(System this, Message msg_data, int targetTaskID){
 	int res = Enqueue(this->TaskTable[targetTaskID], msg_data);
 	if (res == 0) {
 		printf("System error: SEND FAILED to Task %d\n", targetTaskID);
+		exit(-1);
 	}
 }
 
@@ -91,7 +92,7 @@ static int getMsgTag(System this, int targetTaskID){
 		this->TaskTable[targetTaskID] = AcquireQueue(buf);
 	}
 
-	// // If Q is empty, we go to sleep
+	// If Q is empty, we go to sleep
 	if(IsEmpty(this->TaskTable[targetTaskID])) {
 		pthread_mutex_lock(&(this->data->sleepers_lock));
  		pthread_cond_wait(&(this->data->sleepers[targetTaskID]), &(this->data->sleepers_lock));

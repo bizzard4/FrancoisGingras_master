@@ -40,7 +40,8 @@ static void start(DatabaseTask this){
 	printf("Database task has been started\n");
 
 	// Response to 10 requests
-	for (int i = 0; i < 100; i++) {
+	//for (int i = 0; i < 100; i++) {
+	while (1) {
 		// Get a request
 		receive(this);
 
@@ -81,7 +82,7 @@ static void receive(DatabaseTask this){
 }
 
 static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
-	printf("Database task received a request (val=%d) \n", requestMsg->sender_task_id);
+	//printf("Database task received a request (val=%d) \n", requestMsg->sender_task_id);
 	this->current_requester_task_id = requestMsg->sender_task_id;
 }
 

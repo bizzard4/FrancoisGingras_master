@@ -6,6 +6,8 @@
 #include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
 #include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
 
+#include "TaskSystem/TimeHelper.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,7 +45,10 @@ static void start(ClientTask this){
 	// TODO
 
 	// Do 10 request
-	for (int i = 0; i < 50; i++) {
+	struct timespec total_start, total_end;
+	clock_gettime(CLOCK_MONOTONIC, &total_start);
+	for (int i = 0; i < 1000; i++) {
+	//while (1) {
 		// Send a request
 		RequestMsg req = RequestMsg_create(REQUEST_MSG);
 		req->sender_task_id = this->taskID;
@@ -54,6 +59,12 @@ static void start(ClientTask this){
 		// Get the response
 		receive(this);
 	}
+	clock_gettime(CLOCK_MONOTONIC, &total_end);
+
+	// Time stats
+	struct timespec total_diff = diff(total_start, total_end);
+	printf("TOTAL-TIME-TEST %lds,%ldms - Read time\n", total_diff.tv_sec, total_diff.tv_nsec/1000000);
+
 
 	done = 1;
 }
@@ -83,7 +94,7 @@ static void receive(ClientTask this){
 }
 
 static void handle_ResponseMsg(ClientTask this, ResponseMsg responseMsg) {
-	printf("Client task received a response code=%d\n", responseMsg->code);
+	//printf("Client task received a response code=%d\n", responseMsg->code);
 }
 
 
