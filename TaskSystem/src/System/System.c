@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <pthread.h>
 
 static void send(System this, Message msg_data, int targetTaskID){
 	if (this->TaskTable[targetTaskID] == NULL) {
@@ -288,7 +289,8 @@ static void loop_wait_signal(System this) {
 			}
 		}
 
-		usleep(10000); // 10ms
+		//usleep(1); // 10ms
+		pthread_yield();
 	}
 	
 	printf("System loop for wait and signal has shutdown\n");
