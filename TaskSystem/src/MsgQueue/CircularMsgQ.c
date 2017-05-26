@@ -158,7 +158,9 @@ int Enqueue(Queue Q, ElementType item) {
 
 		int size = item->writeAt(item, (void*)((long)Q + future_tail - item->msg_size));
 		Q->tail = future_tail;
-		Q->rollover_position = has_to_rollover; 
+		if (has_to_rollover > 0) { // Only dequeue can set rollover back to -1
+			Q->rollover_position = has_to_rollover; 
+		}
 		Q->size++;
 
 		#ifdef DEBUG_CIRCULAR
