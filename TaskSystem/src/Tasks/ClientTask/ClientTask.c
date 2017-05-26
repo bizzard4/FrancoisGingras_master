@@ -47,8 +47,12 @@ static void start(ClientTask this){
 	// Do 10 request
 	struct timespec total_start, total_end;
 	clock_gettime(CLOCK_MONOTONIC, &total_start);
-	for (int i = 0; i < 1000; i++) {
-	//while (1) {
+	int count = 0;
+	//for (int i = 0; i < 1000; i++) {
+	while (1) {
+
+		count++;
+
 		// Send a request
 		RequestMsg req = RequestMsg_create(REQUEST_MSG);
 		req->sender_task_id = this->taskID;
@@ -82,6 +86,7 @@ static void receive(ClientTask this){
 	// match the message to the right message "handler"
 	switch (tag) {
 	case REQUEST_MSG: // Should never receive this
+		printf("SHOULD NOT RECEIVE REQUEST\n");
 		break;
 	case RESPONSE_MSG:
 		msg = Comm->receive(Comm, this->taskID);

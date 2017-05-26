@@ -41,7 +41,11 @@ static void start(DatabaseTask this){
 
 	// Response to 10 requests
 	//for (int i = 0; i < 100; i++) {
+	int count = 0;
 	while (1) {
+
+		count++;
+
 		// Get a request
 		receive(this);
 

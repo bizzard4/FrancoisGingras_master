@@ -70,7 +70,8 @@ static Message receive(System this, int targetTaskID){
 		ResponseMsg_rebind(msg);
 		return msg->clone(msg);
 	} else {
-		printf("SYSTEM ERROR : Unkown message type\n");
+		Queue tmp = this->TaskTable[targetTaskID];
+		printf("SYSTEM ERROR : Unkown message %p type %d, tag=%d\n", msg, msg->tid, msg->tag);
 		exit(-1);
 	}
 }

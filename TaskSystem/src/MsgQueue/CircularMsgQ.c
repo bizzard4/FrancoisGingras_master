@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#define DEBUG_CIRCULAR
+
 /* Unbounded message queue. Will send error in case of memory issues. 
  * Each message queue has his own mutex.
  */
@@ -92,7 +94,12 @@ ElementType Peek(Queue Q) {
 	ElementType toret = NULL;
 	pthread_mutex_lock (&(Q->QLock));
 	if ((Q != NULL) && (!IsEmpty_not_safe(Q))) {
-		toret = (Message)((long)Q + Q->head);
+		int read_pos = Q->head;
+		if (Q->head == Q->rollover_position) {
+			printf("Rollover detected\n");
+			read_pos = sizeof(struct Queue);
+		}
+		toret = (Message)((long)Q + read_pos);
 	}
 	pthread_mutex_unlock (&(Q->QLock));
 	return toret;
@@ -128,31 +135,38 @@ int Enqueue(Queue Q, ElementType item) {
 			if (future_tail > Q_SIZE) {
 				future_tail = sizeof(struct Queue) + item->msg_size;
 				has_to_rollover = Q->tail;
-				//printf("Cirvular array will rollover %d\n", has_to_rollover);
+				printf("Cirvular array will rollover %p %d %d\n", Q, has_to_rollover, future_tail	);
 			}
 
 			// Full array protection in case of overflow
 			if (has_to_rollover != -1) {
 				if (future_tail > Q->head) {
-					//printf("Circular array full\n");
+					printf("Circular array full\n");
 					pthread_mutex_unlock (&(Q->QLock));
 					return 0;
 				}
 			}
 		} else { // Already overflow
 			if (future_tail > Q->head) {
-					//printf("Circular array full\n");
+					printf("Circular array full\n");
 					pthread_mutex_unlock (&(Q->QLock));
-					return 0;
+					;return 0;
 			}
 		}
 
 		// Write to future
+
 		int size = item->writeAt(item, (void*)((long)Q + future_tail - item->msg_size));
 		Q->tail = future_tail;
 		Q->rollover_position = has_to_rollover; 
 		Q->size++;
+
+		#ifdef DEBUG_CIRCULAR
+			printf("ENQ Q=%p Msize=%d tail=%d head=%d size=%d rollover_position=%d\n", Q, item->msg_size, Q->tail, Q->head, Q->size, Q->rollover_position);
+		#endif
+
 		pthread_mutex_unlock (&(Q->QLock));
+
 
 		return 1;
 	}
@@ -169,14 +183,18 @@ ElementType Dequeue(Queue Q) {
 		// to the right rebuilder method
 		int read_pos = Q->head;
 		if (Q->head == Q->rollover_position) {
-			//printf("Rollover detected\n");
+			printf("Rollover detected\n");
 			read_pos = sizeof(struct Queue);
 			Q->rollover_position = -1;
 		}
 		
-		Message message_part = (Message)((long)Q + read_pos);
+		Message message_part = (Message)(void*)((long)Q + read_pos);
 		Q->head = read_pos + message_part->msg_size;
 		Q->size--;
+
+		#ifdef DEBUG_CIRCULAR
+			printf("DEQ Q=%p Msize=%d tail=%d head=%d size=%d rollover_position=%d\n", Q, message_part->msg_size, Q->tail, Q->head, Q->size, Q->rollover_position);
+		#endif
 		
 		toret = message_part;
 	}

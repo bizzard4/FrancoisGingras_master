@@ -5,6 +5,8 @@
 #include "TaskSystem/CircularMsgQ.h"
 #include "TaskSystem/Messages/Message.h"
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
+#include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
+#include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
 
 /// Pre-def for testing purpose
 struct Queue
@@ -128,6 +130,61 @@ int main(void) {
 	printf("IsRollover=%d\n", q->rollover_position);
 
 	DeleteQueue("/TEST_CIRCULAR_MSG_Q");
+
+
+	// Overflow testing
+	Queue q2 = CreateQueue("/TEST_Q_OVERFLOW");
+
+	// Response to the request (int for now)
+	RequestMsg overflow_res_msg = RequestMsg_create(1);
+	overflow_res_msg->request_type = 3;
+
+	for (int i = 0; i < 50000; i++) {
+		res = Enqueue(q2, (Message)overflow_res_msg);
+		if (res == 0) {
+			printf("Error: Enqueue failed on overflow test\n");
+			return -1;
+		}
+
+		// First we validate the peek
+		Message peeked_overflow = (Message)Peek(q2);
+		if (peeked_overflow == NULL) {
+			printf("Error : Peek failed on overflow test\n");
+			return -1;
+		}
+		if (peeked_overflow->tid != 8) {
+			printf("Error : Peek failed on overflow test\n");
+			return -1;
+		}
+		if (peeked_overflow->tag != 1) {
+			printf("Error : Peek failed on overflow test\n");
+			return -1;
+		}
+
+		RequestMsg deq_response = (RequestMsg)Dequeue(q2);
+		if (deq_response == NULL) {
+			printf("Error : Dequeue failed on overflow test\n");
+			return -1;
+		}
+		if (deq_response->request_type != 3) {
+			printf("Error : Dequeue failed on overflow test\n");
+			return -1;
+		}
+		if (deq_response->tid != 8) {
+			printf("Error : Dequeue failed on overflow test\n");
+			return -1;
+		}
+		if (deq_response->tag != 1) {
+			printf("Error : Dequeue failed on overflow test\n");
+			return -1;
+		}
+
+	}
+
+	overflow_res_msg->destroy(overflow_res_msg);
+
+	DeleteQueue("/TEST_Q_OVERFLOW");
+
 
 	printf("Success\n");
 	return 0;
