@@ -56,6 +56,9 @@ struct System {
 	unsigned int 	(*getNextTaskID)(System this);
 	void 	(*createMsgQ)(System this, unsigned int taskID);
 	void 	(*destroy)(System this);
+	void	(*message_notify)(System this, unsigned int taskID);
+	void	(*message_wait)(System this, unsigned int taskID);
+	int 	(*message_immediate)(System this, unsigned int taskID);
 };
 
 static void *run(void* SystemRef);

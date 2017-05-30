@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define DEBUG_CIRCULAR
+//#define DEBUG_CIRCULAR
 
 /* Unbounded message queue. Will send error in case of memory issues. 
  * Each message queue has his own mutex.
@@ -96,7 +96,6 @@ ElementType Peek(Queue Q) {
 	if ((Q != NULL) && (!IsEmpty_not_safe(Q))) {
 		int read_pos = Q->head;
 		if (Q->head == Q->rollover_position) {
-			printf("Rollover detected\n");
 			read_pos = sizeof(struct Queue);
 		}
 		toret = (Message)((long)Q + read_pos);
@@ -135,7 +134,9 @@ int Enqueue(Queue Q, ElementType item) {
 			if (future_tail > Q_SIZE) {
 				future_tail = sizeof(struct Queue) + item->msg_size;
 				has_to_rollover = Q->tail;
+#ifdef DEBUG_CIRCULAR
 				printf("Cirvular array will rollover %p %d %d\n", Q, has_to_rollover, future_tail	);
+#endif
 			}
 
 			// Full array protection in case of overflow
@@ -185,7 +186,6 @@ ElementType Dequeue(Queue Q) {
 		// to the right rebuilder method
 		int read_pos = Q->head;
 		if (Q->head == Q->rollover_position) {
-			printf("Rollover detected\n");
 			read_pos = sizeof(struct Queue);
 			Q->rollover_position = -1;
 		}

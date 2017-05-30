@@ -12,6 +12,10 @@
 static void send(SampleSortTask this, Message data, int targetTaskID);
 static void receive(SampleSortTask this);
 
+static void message_notify(SampleSortTask this);
+static void message_wait(SampleSortTask this);
+static int message_immediate(SampleSortTask this);
+
 static void *run(void *SampleSortTaskRef);
 static void start(SampleSortTask this);
 
@@ -67,6 +71,16 @@ static void *run(void *SampleSortTaskRef){
 
 static void send(SampleSortTask this, Message data, int targetID){
 	Comm->send(Comm, data, targetID);
+}
+
+static void message_notify(SampleSortTask this) {
+	Comm->message_notify(Comm, this->taskID);
+}
+static void message_wait(SampleSortTask this) {
+	Comm->message_wait(Comm, this->taskID);
+}
+static int message_immediate(SampleSortTask this) {
+	return Comm->message_immediate(Comm, this->taskID);
 }
 
 #endif /* SAMPLESORTTASK_GENERATED_H_ */

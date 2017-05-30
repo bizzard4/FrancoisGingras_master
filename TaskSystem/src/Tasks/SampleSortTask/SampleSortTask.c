@@ -180,9 +180,11 @@ static void start(SampleSortTask this) {
 		send(this, (Message)getSubArraySignal, buckets[ki]);
 	}
 	getSubArraySignal->destroy(getSubArraySignal);
+	message_wait(this);
 
 	// Phase 2 wait on K sub-array message
 	for (int ki = 0; ki < this->K; ki++) {
+		message_notify(this);
 		receive(this);
 	}
 	printf("Phase 2 is done\n");
@@ -212,6 +214,7 @@ static void start(SampleSortTask this) {
 
 	// Phase 3 wait on K done message
 	for (int ki = 0; ki < this->K; ki++) {
+		message_notify(this);
 		receive(this);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &wait_bucket_end);

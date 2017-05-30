@@ -12,6 +12,10 @@
 static void send(BucketTask this, Message data, int targetTaskID);
 static void receive(BucketTask this);
 
+static void message_notify(BucketTask this);
+static void message_wait(BucketTask this);
+static int message_immediate(BucketTask this);
+
 static void *run(void *BucketTaskkRef);
 static void start(BucketTask this);
 
@@ -89,6 +93,16 @@ static void send(BucketTask this, Message data, int targetID){
 	Comm->send(Comm, data, targetID);
 	clock_gettime(CLOCK_MONOTONIC, &send_end);
 	this->send_time_acc = tsAdd(this->send_time_acc, diff(send_start, send_end));
+}
+
+static void message_notify(BucketTask this) {
+	Comm->message_notify(Comm, this->taskID);
+}
+static void message_wait(BucketTask this) {
+	Comm->message_wait(Comm, this->taskID);
+}
+static int message_immediate(BucketTask this) {
+	return Comm->message_immediate(Comm, this->taskID);
 }
 
 #endif /* BUCKETTASK_GENERATED_H_ */

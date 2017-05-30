@@ -14,7 +14,10 @@
 static void send(PapaTask this, Message data, int targetTaskID);
 static void receive(PapaTask this, int targetTaskID);
 
-//static void *run(void *PapaTaskRef);
+static void message_notify(PapaTask this);
+static void message_wait(PapaTask this);
+static int message_immediate(PapaTask this);
+
 static void *run(void *PapaTaskRef);
 static void start(PapaTask this);
 
@@ -64,6 +67,16 @@ static void *run(void *PapaTaskRef){
 // does the same thing
 static void send(PapaTask this, Message data, int targetPapaTaskID){
 	Comm->send(Comm, data, targetPapaTaskID);
+}
+
+static void message_notify(PapaTask this) {
+	Comm->message_notify(Comm, this->taskID);
+}
+static void message_wait(PapaTask this) {
+	Comm->message_wait(Comm, this->taskID);
+}
+static int message_immediate(PapaTask this) {
+	return Comm->message_immediate(Comm, this->taskID);
 }
 
 

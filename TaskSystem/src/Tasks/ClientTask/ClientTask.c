@@ -48,8 +48,8 @@ static void start(ClientTask this){
 	struct timespec total_start, total_end;
 	clock_gettime(CLOCK_MONOTONIC, &total_start);
 	int count = 0;
-	//for (int i = 0; i < 1000; i++) {
-	while (1) {
+	for (int i = 0; i < 1000000; i++) {
+	//while (1) {
 
 		count++;
 
@@ -59,6 +59,7 @@ static void start(ClientTask this){
 		req->request_type = SELECT_REQUEST;
 		send(this, (Message)req, 1); 
 		req->destroy(req);
+		message_wait(this);
 
 		// Get the response
 		receive(this);

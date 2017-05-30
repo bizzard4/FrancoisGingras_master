@@ -14,6 +14,10 @@
 static void send(ClientTask this, Message data, int targetTaskID);
 static void receive(ClientTask this);
 
+static void message_notify(ClientTask this);
+static void message_wait(ClientTask this);
+static int message_immediate(ClientTask this);
+
 static void *run(void *ClientTaskRef);
 static void start(ClientTask this);
 
@@ -63,6 +67,16 @@ static void *run(void *ClientTaskRef){
 // does the same thing
 static void send(ClientTask this, Message data, int targetTaskID){
 	Comm->send(Comm, data, targetTaskID);
+}
+
+static void message_notify(ClientTask this) {
+	Comm->message_notify(Comm, this->taskID);
+}
+static void message_wait(ClientTask this) {
+	Comm->message_wait(Comm, this->taskID);
+}
+static int message_immediate(ClientTask this) {
+	return Comm->message_immediate(Comm, this->taskID);
 }
 
 

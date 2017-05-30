@@ -14,6 +14,10 @@
 static void send(DatabaseTask this, Message data, int targetTaskID);
 static void receive(DatabaseTask this);
 
+static void message_notify(DatabaseTask this);
+static void message_wait(DatabaseTask this);
+static int message_immediate(DatabaseTask this);
+
 static void *run(void *DatabaseTaskRef);
 static void start(DatabaseTask this);
 
@@ -66,6 +70,16 @@ static void *run(void *DatabaseTaskRef){
 // does the same thing
 static void send(DatabaseTask this, Message data, int targetTaskID){
 	Comm->send(Comm, data, targetTaskID);
+}
+
+static void message_notify(DatabaseTask this) {
+	Comm->message_notify(Comm, this->taskID);
+}
+static void message_wait(DatabaseTask this) {
+	Comm->message_wait(Comm, this->taskID);
+}
+static int message_immediate(DatabaseTask this) {
+	return Comm->message_immediate(Comm, this->taskID);
 }
 
 

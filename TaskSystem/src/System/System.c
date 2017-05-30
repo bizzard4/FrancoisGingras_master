@@ -94,13 +94,6 @@ static int getMsgTag(System this, int targetTaskID){
 		this->TaskTable[targetTaskID] = AcquireQueue(buf);
 	}
 
-	// If Q is empty, we go to sleep
-	if(IsEmpty(this->TaskTable[targetTaskID])) {
-		pthread_mutex_lock(&(this->data->sleepers_lock));
- 		pthread_cond_wait(&(this->data->sleepers[targetTaskID]), &(this->data->sleepers_lock));
- 		pthread_mutex_unlock(&(this->data->sleepers_lock));
-	}
-
 	// Recheck
 	Message msg = Peek(this->TaskTable[targetTaskID]);
 	if (msg == NULL) {
@@ -144,6 +137,39 @@ static void destroy(System this){
 }
 
 /*
+ * Return 1 if a message is in the Q.
+ */
+static int message_immediate(System this, unsigned int taskID) {
+	if (this->TaskTable[taskID] == NULL) {
+		char buf[15];
+		sprintf(buf, "/TS_T%d", taskID);
+		this->TaskTable[taskID] = AcquireQueue(buf);
+	}
+
+	return IsEmpty(this->TaskTable[taskID]);
+}
+
+/*
+ * Put thread to sleep if no message is in the Q. Will be woke-up by the signal loop when
+ * a message is present.
+ */
+static void message_notify(System this, unsigned int taskID) {
+	// If Q is empty, we go to sleep
+	if(message_immediate(this, taskID)) {
+		pthread_mutex_lock(&(this->data->sleepers_lock));
+ 		pthread_cond_wait(&(this->data->sleepers[taskID]), &(this->data->sleepers_lock));
+ 		pthread_mutex_unlock(&(this->data->sleepers_lock));
+	}
+}
+
+/*
+ * Yield the CPU.
+ */
+static void message_wait(System this, unsigned int taskID) {
+	sched_yield();
+}
+
+/*
  * With other objects, the create method was placed into a "generated"
  * header file. We don't do this here since everything in this file
  * is provided by the language framework anyway.
@@ -183,6 +209,9 @@ System System_create(){
 	newRec->getNextTaskID = getNextTaskID;
 	newRec->createMsgQ = createMsgQ;;
 	newRec->destroy = destroy;
+	newRec->message_immediate = message_immediate;	
+	newRec->message_notify = message_notify;
+	newRec->message_wait = message_wait;
 
 	// Local addr and SHM-id
 	for (int i = 0; i < MAX_TASK; i++) {
@@ -260,6 +289,9 @@ System System_acquire() {
 	newRec->getNextTaskID = getNextTaskID;
 	newRec->createMsgQ = createMsgQ;;
 	newRec->destroy = destroy;
+	newRec->message_immediate = message_immediate;	
+	newRec->message_notify = message_notify;
+	newRec->message_wait = message_wait;
 
 	// Local addr to Q only
 	for (int i = 0; i < MAX_TASK; i++) {
@@ -290,8 +322,8 @@ static void loop_wait_signal(System this) {
 			}
 		}
 
-		//usleep(1); // 10ms
-		pthread_yield();
+		usleep(1000); // 10ms
+		//pthread_yield();
 	}
 	
 	printf("System loop for wait and signal has shutdown\n");

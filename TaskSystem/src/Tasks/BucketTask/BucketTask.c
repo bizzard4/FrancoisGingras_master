@@ -58,6 +58,7 @@ static void start(BucketTask this) {
 	// ----------------------------------
 
 	// Get topology
+	message_notify(this);
 	receive(this);
 #ifdef DEBUG_DATA
 	printf("Bucket %d tolopogy=", this->taskID);
@@ -70,6 +71,7 @@ static void start(BucketTask this) {
 	// Get ref to data
 	struct timespec get_sample_start, get_sample_end;
 	clock_gettime(CLOCK_MONOTONIC, &get_sample_start);
+	message_notify(this);
 	receive(this);
 #ifdef DEBUG_DATA
 	printf("Bucket %d data (size=%d) : ", this->taskID, this->data_size);
@@ -83,6 +85,7 @@ static void start(BucketTask this) {
 	// Get splitters
 	struct timespec get_splitter_start, get_splitter_end;
 	clock_gettime(CLOCK_MONOTONIC, &get_splitter_start);
+	message_notify(this);
 	receive(this);
 #ifdef DEBUG_DATA
 	printf("Bucket %d splitters=", this->taskID);
@@ -98,6 +101,7 @@ static void start(BucketTask this) {
 	// ----------------------------------
 
 	// Get command to start computing sub array
+	message_notify(this);
 	receive(this);
 
 	// Pick values to send to others
@@ -170,12 +174,14 @@ static void start(BucketTask this) {
 	send(this, (Message)ref_to_root, this->root_id);
 	ref_to_root->destroy(ref_to_root);
 	clock_gettime(CLOCK_MONOTONIC, &propagate_end);
+	message_wait(this);
 
 	// ----------------------------------
 	// Round 3) - Get K reference to all subarray and rebuild final array
 	// ----------------------------------
 
 	// Receive sub-array for this bucket
+	message_notify(this);
 	receive(this);
 
 	// Final sorting
