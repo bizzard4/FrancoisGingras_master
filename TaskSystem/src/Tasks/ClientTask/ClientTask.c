@@ -33,7 +33,9 @@
 // message tags
 enum {REQUEST_MSG, RESPONSE_MSG};
 
+// Global variable for testing purpose
 int done;
+int nb_request;
 
 /*
  * This is the "main" method for the thread
@@ -48,9 +50,7 @@ static void start(ClientTask this){
 	struct timespec total_start, total_end;
 	clock_gettime(CLOCK_MONOTONIC, &total_start);
 	int count = 0;
-	for (int i = 0; i < 1000000; i++) {
-	//while (1) {
-
+	for (int i = 0; i < nb_request; i++) {
 		count++;
 
 		// Send a request

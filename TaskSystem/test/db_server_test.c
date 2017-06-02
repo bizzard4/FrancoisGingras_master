@@ -10,13 +10,23 @@
 System Comm;
 
 // To close the test case
-int done; 
+int done;
+int max_request; 
 
 /**
  * Database server test case
  */
 int main(int argc, char *argv[]) {
 	done = 0;
+
+	// Read max_request
+	if (argc >= 2) {
+		max_request = atoi(argv[1]);
+	} else {
+		max_request = -1;
+	}
+	printf("Server started with max_request=%d\n", max_request);
+
 
 	// Database initialize the system
 	Comm = System_create();

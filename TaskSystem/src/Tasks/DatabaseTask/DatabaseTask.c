@@ -32,6 +32,7 @@
 enum {REQUEST_MSG, RESPONSE_MSG};
 
 int done;
+int max_request; 
 
 /*
  * This is the "main" method for the thread
@@ -42,7 +43,7 @@ static void start(DatabaseTask this){
 	// Response to 10 requests
 	//for (int i = 0; i < 100; i++) {
 	int count = 0;
-	while (1) {
+	while ((count < max_request) || (max_request == -1)) {
 
 		count++;
 

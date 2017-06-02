@@ -323,7 +323,6 @@ static void loop_wait_signal(System this) {
 		}
 
 		usleep(1000); // 10ms
-		//pthread_yield();
 	}
 	
 	printf("System loop for wait and signal has shutdown\n");

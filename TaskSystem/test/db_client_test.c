@@ -11,12 +11,21 @@ System Comm;
 
 // To close the test case at the end
 int done;
+int nb_request;
 
 /**
  * Database server test case
  */
 int main(int argc, char *argv[]) {
 	done = 0;
+
+	// Read request_count
+	if (argc != 2) {
+		printf("Usage : db_client_test N\n");
+		return -1;
+	}
+	nb_request = atoi(argv[1]);
+	printf("Client started with nb_request=%d\n", nb_request);
 
 	// Database initialize the system
 	Comm = System_acquire();
