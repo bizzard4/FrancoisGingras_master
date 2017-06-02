@@ -21,12 +21,19 @@
 #include <errno.h>
 #include <pthread.h>
 
-static void send(System this, Message msg_data, int targetTaskID){
-	if (this->TaskTable[targetTaskID] == NULL) {
+/**
+ * This method will check if the circular Q exist, if not, it will acquire it.
+ */
+void check_Q_and_acquire(System this, int taskID) {
+	if (this->TaskTable[taskID] == NULL) {
 		char buf[15];
-		sprintf(buf, "/TS_T%d", targetTaskID);
-		this->TaskTable[targetTaskID] = AcquireQueue(buf);
+		sprintf(buf, "/TS_T%d", taskID);
+		this->TaskTable[taskID] = AcquireQueue(buf);
 	}
+}
+
+static void send(System this, Message msg_data, int targetTaskID){
+	check_Q_and_acquire(this, targetTaskID);
 
 	// TODO : Need to check enq return value to detect array full, busy loop may be used
 	int res = Enqueue(this->TaskTable[targetTaskID], msg_data);
@@ -78,21 +85,13 @@ static Message receive(System this, int targetTaskID){
 
 
 static void dropMsg(System this, int targetTaskID){
-	if (this->TaskTable[targetTaskID] == NULL) {
-		char buf[15];
-		sprintf(buf, "/TS_T%d", targetTaskID);
-		this->TaskTable[targetTaskID] = AcquireQueue(buf);
-	}
+	check_Q_and_acquire(this, targetTaskID);
 
 	Dequeue(this->TaskTable[targetTaskID]);
 }
 
 static int getMsgTag(System this, int targetTaskID){
-	if (this->TaskTable[targetTaskID] == NULL) {
-		char buf[15];
-		sprintf(buf, "/TS_T%d", targetTaskID);
-		this->TaskTable[targetTaskID] = AcquireQueue(buf);
-	}
+	check_Q_and_acquire(this, targetTaskID);
 
 	// Recheck
 	Message msg = Peek(this->TaskTable[targetTaskID]);
@@ -140,11 +139,7 @@ static void destroy(System this){
  * Return 1 if a message is in the Q.
  */
 static int message_immediate(System this, unsigned int taskID) {
-	if (this->TaskTable[taskID] == NULL) {
-		char buf[15];
-		sprintf(buf, "/TS_T%d", taskID);
-		this->TaskTable[taskID] = AcquireQueue(buf);
-	}
+	check_Q_and_acquire(this, taskID);
 
 	return IsEmpty(this->TaskTable[taskID]);
 }
