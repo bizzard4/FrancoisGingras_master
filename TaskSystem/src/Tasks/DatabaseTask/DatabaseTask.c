@@ -11,8 +11,8 @@
 #include <string.h>
 #include <unistd.h>
 
-
-
+// Business logic include
+#include "TaskSystem/Tasks/ClientTask/SelectInfo.h"
 
 // this file contains code that the language compiler/runtime
 // would generated automatically
@@ -20,6 +20,8 @@
 
 
 
+// Print query and result
+#define VERBOSE
 
 
 
@@ -57,12 +59,17 @@ static void start(DatabaseTask this){
 		res->destroy(res);
 	}
 
+#ifdef VERBOSE
+	printf("Student list : \n");
+	for (int i = 0; i < this->student_count; i++) {
+		printf("Student %d id=%ld name=%s gpa=%f\n", i, this->students[i].id, this->students[i].name, this->students[i].gpa);
+	}
+#endif
+
 	sleep(1); // Safety, if the main process close before the last message is read from 
 	// the client, then we enter in a infinite loop
 	done = 1;
 }
-
-
 
 static void receive(DatabaseTask this){
 	int tag = Comm->getMsgTag(Comm, this->taskID);
@@ -87,8 +94,51 @@ static void receive(DatabaseTask this){
 }
 
 static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
-	//printf("Database task received a request (val=%d) \n", requestMsg->sender_task_id);
+#ifdef VERBOSE
+	printf("Database task received a request sender=%d req_type=%d data_size=%d \n", requestMsg->sender_task_id, requestMsg->request_type, requestMsg->data_size);
+	printf("Byte recv : ");
+	for (int j = 0; j < requestMsg->data_size; j++) {
+		printf("%04x ", requestMsg->data[j]);
+	}
+	printf("\n");
+#endif
+
 	this->current_requester_task_id = requestMsg->sender_task_id;
+
+	struct SelectInfo sel_info;
+	struct StudentInfo insert_info;
+	struct SelectInfo del_info;
+
+	switch (requestMsg->request_type) {
+
+	case SELECT_REQUEST:
+		memcpy(&sel_info, requestMsg->getData(requestMsg), sizeof(struct SelectInfo));
+#ifdef VERBOSE
+		printf("Select query student_id=%ld\n", sel_info.id);
+#endif
+		break;
+
+	case INSERT_REQUEST:
+		memcpy(&insert_info, requestMsg->getData(requestMsg), sizeof(struct StudentInfo));
+#ifdef VERBOSE
+		printf("Insert query id=%ld name=%s gpa=%f\n", insert_info.id, insert_info.name, insert_info.gpa);
+#endif
+		// Put the new student in the buffer
+		this->students[this->student_count].id = insert_info.id;
+		strncpy(this->students[this->student_count].name, insert_info.name, 30);
+		this->students[this->student_count].gpa = insert_info.gpa;
+		this->student_count++;
+		break;
+
+	case DELETE_REQUEST:
+		memcpy(&del_info, requestMsg->getData(requestMsg), sizeof(struct StudentInfo));
+#ifdef VERBOSE
+		printf("Delete query student_id=%ld\n", del_info.id);
+#endif
+		break;
+	default:
+		printf("Database error, invalid request type %d\n", requestMsg->request_type);
+	}
 }
 
 

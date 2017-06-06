@@ -8,6 +8,10 @@
 
 #include "TaskSystem/TimeHelper.h"
 
+// Business logic include
+#include "TaskSystem/Tasks/ClientTask/SelectInfo.h"
+#include "TaskSystem/Tasks/DatabaseTask/StudentInfo.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +24,8 @@
 // would generated automatically
 #include "TaskSystem/Tasks/ClientTask/generated.h"
 
-
+// Print query request
+#define VERBOSE
 
 
 
@@ -45,6 +50,7 @@ static void start(ClientTask this){
 
 	// Get the database task id
 	// TODO
+	int database_id = 1;
 
 	// Do 10 request
 	struct timespec total_start, total_end;
@@ -56,8 +62,41 @@ static void start(ClientTask this){
 		// Send a request
 		RequestMsg req = RequestMsg_create(REQUEST_MSG);
 		req->sender_task_id = this->taskID;
+
+		int size = 0;
+
+		// Select request
+		struct SelectInfo req_data;
+		req_data.id = (long)i;
+		size = sizeof(struct SelectInfo);
 		req->request_type = SELECT_REQUEST;
-		send(this, (Message)req, 1); 
+
+		// insert request
+		//struct StudentInfo req_data;
+		//req_data.id = (long)i;
+		//strncpy(&req_data.name, "Francois Gingras", 30);
+		//req_data.gpa = 4.3f;
+		//size = sizeof(struct StudentInfo);
+		//req->request_type = INSERT_REQUEST;
+
+		// delete request
+		//struct SelectInfo req_data;
+		//req_data.id = (long)i;
+		//size = sizeof(struct SelectInfo);
+		//req->request_type = DELETE_REQUEST;
+
+
+		unsigned char buffer[size];
+		memcpy(buffer, &req_data, size);
+#ifdef VERBOSE
+		printf("Byte send : ");
+		for (int j = 0; j < size; j++) {
+			printf("%04x ", buffer[j]);
+		}
+		printf("\n");
+#endif
+		req->setData(req, buffer, size);
+		send(this, (Message)req, database_id); 
 		req->destroy(req);
 		message_wait(this);
 

@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <pthread.h>
 
+// Business logic include
+#include "TaskSystem/Tasks/DatabaseTask/StudentInfo.h"
+
 
 /******************************
  *  System generated code
@@ -33,6 +36,8 @@ struct DatabaseTask {
 
 	int current_requester_task_id;
 
+	int student_count;
+	struct StudentInfo students[100];
 };
 
 
@@ -45,6 +50,8 @@ unsigned int DatabaseTask_create(){
 
 	newRec->taskID = Comm->getNextTaskID(Comm);
 	Comm->createMsgQ(Comm, newRec->taskID);
+
+	newRec->student_count = 0;
 
 	int result = pthread_create( &(newRec->threadRef), NULL, run, (void *)newRec);
 	if (result){
