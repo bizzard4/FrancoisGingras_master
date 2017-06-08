@@ -3,9 +3,6 @@
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
 
-#include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
-#include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +33,12 @@ enum {REQUEST_MSG, RESPONSE_MSG};
 int done;
 int max_request; 
 
+void setResponse(DatabaseTask this, int code, char* data, int data_size) {
+	this->response_code = code;
+	this->response_data = data;
+	this->response_size = data_size;
+}
+
 /*
  * This is the "main" method for the thread
  */
@@ -54,7 +57,10 @@ static void start(DatabaseTask this){
 
 		// Response to the request (int for now)
 		ResponseMsg res = ResponseMsg_create(RESPONSE_MSG);
-		res->code = 200;
+		res->code = this->response_code;
+		if (this->response_size > 0) {
+			res->setData(res, this->response_data, this->response_size);
+		}
 		send(this, (Message)res, this->current_requester_task_id); 
 		res->destroy(res);
 	}
@@ -109,6 +115,8 @@ static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
 	struct StudentInfo insert_info;
 	struct SelectInfo del_info;
 
+	int found;
+
 	switch (requestMsg->request_type) {
 
 	case SELECT_REQUEST:
@@ -116,6 +124,22 @@ static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
 #ifdef VERBOSE
 		printf("Select query student_id=%ld\n", sel_info.id);
 #endif
+
+		// Find the record
+		found = -1;
+		for (int i = 0; i < this->student_count; i++) {
+			if (this->students[i].id == sel_info.id) {
+				found = i;
+				break;
+			}
+		}
+
+		// Set the response
+		if (found >= 0) {
+			setResponse(this, RESPONSE_OK, &this->students[found], sizeof(struct StudentInfo));
+		} else {
+			setResponse(this, RESPONSE_ERROR, NULL, 0);
+		}
 		break;
 
 	case INSERT_REQUEST:
@@ -128,6 +152,9 @@ static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
 		strncpy(this->students[this->student_count].name, insert_info.name, 30);
 		this->students[this->student_count].gpa = insert_info.gpa;
 		this->student_count++;
+
+		// Set future response
+		setResponse(this, RESPONSE_OK, NULL, 0);
 		break;
 
 	case DELETE_REQUEST:
@@ -135,6 +162,25 @@ static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
 #ifdef VERBOSE
 		printf("Delete query student_id=%ld\n", del_info.id);
 #endif
+
+		// Find the record and delete it
+		found = -1;
+		for (int i = 0; i < this->student_count; i++) {
+			if (this->students[i].id == del_info.id) {
+				this->students[i].id = -1;
+				strncpy(this->students[i].name, "", 30);
+				this->students[i].gpa = 0.0f;
+
+				found = 1;
+				break;
+			}
+		}
+
+		if (found > 0) {
+			setResponse(this, RESPONSE_OK, NULL, 0);
+		} else {
+			setResponse(this, RESPONSE_ERROR, NULL, 0);
+		}
 		break;
 	default:
 		printf("Database error, invalid request type %d\n", requestMsg->request_type);

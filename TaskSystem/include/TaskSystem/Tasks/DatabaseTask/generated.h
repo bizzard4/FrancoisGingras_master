@@ -8,6 +8,8 @@
 
 // Business logic include
 #include "TaskSystem/Tasks/DatabaseTask/StudentInfo.h"
+#include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
+#include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
 
 
 /******************************
@@ -36,6 +38,11 @@ struct DatabaseTask {
 
 	int current_requester_task_id;
 
+	int response_code;
+	char* response_data;
+	int response_size;
+
+
 	int student_count;
 	struct StudentInfo students[100];
 };
@@ -50,6 +57,10 @@ unsigned int DatabaseTask_create(){
 
 	newRec->taskID = Comm->getNextTaskID(Comm);
 	Comm->createMsgQ(Comm, newRec->taskID);
+
+	newRec->response_code = RESPONSE_ERROR;
+	newRec->response_data = NULL;
+	newRec->response_size = 0;
 
 	newRec->student_count = 0;
 

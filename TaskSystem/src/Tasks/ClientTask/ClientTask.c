@@ -41,6 +41,7 @@ enum {REQUEST_MSG, RESPONSE_MSG};
 // Global variable for testing purpose
 int done;
 int nb_request;
+int req_type;
 
 /*
  * This is the "main" method for the thread
@@ -64,30 +65,43 @@ static void start(ClientTask this){
 		req->sender_task_id = this->taskID;
 
 		int size = 0;
+		unsigned char* buffer;
 
-		// Select request
-		struct SelectInfo req_data;
-		req_data.id = (long)i;
-		size = sizeof(struct SelectInfo);
-		req->request_type = SELECT_REQUEST;
+		struct SelectInfo sel_data;
+		struct StudentInfo student_data;
 
-		// insert request
-		//struct StudentInfo req_data;
-		//req_data.id = (long)i;
-		//strncpy(&req_data.name, "Francois Gingras", 30);
-		//req_data.gpa = 4.3f;
-		//size = sizeof(struct StudentInfo);
-		//req->request_type = INSERT_REQUEST;
+		switch (req_type) {
+		case 1:
+			// Select request
+			sel_data.id = (long)i;
+			size = sizeof(struct SelectInfo);
+			buffer = malloc(size * sizeof(unsigned char));
+			req->request_type = SELECT_REQUEST;
+			memcpy(buffer, &sel_data, size);
+			break;
+		case 2:
+			// insert request
+			student_data.id = (long)i;
+			strncpy(&student_data.name, "Francois Gingras", 30);
+			student_data.gpa = 4.3f;
+			size = sizeof(struct StudentInfo);
+			buffer = malloc(size * sizeof(unsigned char));
+			req->request_type = INSERT_REQUEST;
+			memcpy(buffer, &student_data, size);
+			break;
+		case 3:
+			// delete request
+			sel_data.id = (long)i;
+			size = sizeof(struct SelectInfo);
+			buffer = malloc(size * sizeof(unsigned char));
+			req->request_type = DELETE_REQUEST;
+			memcpy(buffer, &sel_data, size);
+			break;
+		default:
+			printf("Error in request type %d\n", req_type);
+			exit(-1);
+		}
 
-		// delete request
-		//struct SelectInfo req_data;
-		//req_data.id = (long)i;
-		//size = sizeof(struct SelectInfo);
-		//req->request_type = DELETE_REQUEST;
-
-
-		unsigned char buffer[size];
-		memcpy(buffer, &req_data, size);
 #ifdef VERBOSE
 		printf("Byte send : ");
 		for (int j = 0; j < size; j++) {
@@ -97,6 +111,7 @@ static void start(ClientTask this){
 #endif
 		req->setData(req, buffer, size);
 		send(this, (Message)req, database_id); 
+		free(buffer);
 		req->destroy(req);
 		message_wait(this);
 
@@ -139,7 +154,14 @@ static void receive(ClientTask this){
 }
 
 static void handle_ResponseMsg(ClientTask this, ResponseMsg responseMsg) {
-	//printf("Client task received a response code=%d\n", responseMsg->code);
+#ifdef VERBOSE
+	printf("Client task received a response code=%d data_size=%d\n", responseMsg->code, responseMsg->data_size);
+	if (responseMsg->data_size > 0) {
+		struct StudentInfo res_data;
+		memcpy(&res_data, responseMsg->getData(responseMsg), sizeof(struct StudentInfo));
+		printf("Student id=%ld name=%s gpa=%f\n", res_data.id, res_data.name, res_data.gpa);
+	}
+#endif
 }
 
 

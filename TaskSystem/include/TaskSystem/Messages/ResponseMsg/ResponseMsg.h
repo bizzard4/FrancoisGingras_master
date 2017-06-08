@@ -8,6 +8,8 @@
 
 typedef struct ResponseMsg *ResponseMsg;
 
+enum {RESPONSE_ERROR, RESPONSE_OK};
+
 // This message will be used over IPC and will perform copy
 
 struct ResponseMsg {

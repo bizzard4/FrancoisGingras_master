@@ -72,6 +72,7 @@ static void setData(ResponseMsg this, char* data, int size) {
 	for (int i = 0; i < size; i++) {
 		this->data[i] = data[i];
 	}
+	this->data_size = size;
 	this->msg_size += sizeof(char) * size;
 }
 
