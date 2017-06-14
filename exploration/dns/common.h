@@ -3,4 +3,6 @@
 
 char* str_addr = "/tmp/socket";
 
+//#define VERBOSE
+
 #endif

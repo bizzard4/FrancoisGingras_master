@@ -63,7 +63,25 @@ int main(int argc, char *argv[]) {
 	printf("Start sending\n");
 	clock_gettime(CLOCK_MONOTONIC, &send_start);
 	for (int i = 0; i < request_count; i++) {
-		int e = write(sc, data, len);
+		// Send a request
+		int e = send(sc, data, len, 0);
+#ifdef VERBOSE
+		printf("%d Send %d bytes\n", i, e);
+#endif
+
+		// Get a response
+		if (e == len) {
+			char buffer[4];
+			int res_e = recv(sc, buffer, 4, 0);
+#ifdef VERBOSE
+			printf("%d Received %d bytes\n", i, res_e);
+#endif
+			if (res_e != len) {
+				printf("Received bad response from server res_e=%d %s\n", res_e, strerror(errno));
+				exit(-1);
+			}
+		}
+
 		if (e <= 0) {
 			printf("Send error\n");
 			exit(-1);

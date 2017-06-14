@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 	struct sockaddr_un addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, str_addr, sizeof(addr.sun_path)-1);
+	strcpy(addr.sun_path, str_addr);
 
 	// Bind the socket
 	unlink(str_addr);
@@ -82,8 +82,26 @@ int main(int argc, char *argv[]) {
 	clock_gettime(CLOCK_MONOTONIC, &get_start);
 	while (req < request_count) {
 		for (int t = 0; t < nb_client; t++) {
-			int e = read(clients[t], buf, len);
-			//printf("Received %d bytes\n", e);
+			// Get a request
+			int e = recv(clients[t], buf, len, 0);
+#ifdef VERBOSE
+			printf("%d Received %d bytes\n", req, e);
+#endif
+
+			if (e == len) {
+				// Send an answer
+				int send_e = send(clients[t], buf, len, 0);
+#ifdef VERBOSE
+				printf("%d Send %d bytes\n", req, send_e);
+#endif
+				if (send_e != len) {
+					printf("Server bad response to client %d\n", clients[t]);
+					exit(-1);
+				}
+			}
+
+
+
 			if (e < 0) {
 				printf("Thread receiving error %s\n", strerror(errno));
 				exit(-1);
@@ -104,6 +122,10 @@ int main(int argc, char *argv[]) {
 	struct timespec get_diff = diff(get_start, get_end);
 	printf("S-GET %lds,%ldms - Server recv time\n", get_diff.tv_sec, get_diff.tv_nsec/1000000);
 
+	for (int i = 0; i < nb_client; i++) {
+		close(clients[i]);
+	}
+	close(sc);
 	unlink(str_addr);
 	return 0;
 }
