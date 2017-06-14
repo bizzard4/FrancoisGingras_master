@@ -28,6 +28,8 @@ static void start(DatabaseTask this);
 
 static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg);
 
+#define MAX_STUDENT 1000
+
 
 // The DatabaseTask "class"
 struct DatabaseTask {
@@ -44,7 +46,7 @@ struct DatabaseTask {
 
 
 	int student_count;
-	struct StudentInfo students[100];
+	struct StudentInfo students[MAX_STUDENT];
 };
 
 

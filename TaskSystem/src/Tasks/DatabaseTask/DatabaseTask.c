@@ -136,7 +136,7 @@ static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
 
 		// Set the response
 		if (found >= 0) {
-			setResponse(this, RESPONSE_OK, &this->students[found], sizeof(struct StudentInfo));
+			setResponse(this, RESPONSE_OK, (char*)&this->students[found], sizeof(struct StudentInfo));
 		} else {
 			setResponse(this, RESPONSE_ERROR, NULL, 0);
 		}
@@ -148,13 +148,18 @@ static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
 		printf("Insert query id=%ld name=%s gpa=%f\n", insert_info.id, insert_info.name, insert_info.gpa);
 #endif
 		// Put the new student in the buffer
-		this->students[this->student_count].id = insert_info.id;
-		strncpy(this->students[this->student_count].name, insert_info.name, 30);
-		this->students[this->student_count].gpa = insert_info.gpa;
-		this->student_count++;
+		if (this->student_count < MAX_STUDENT) {
+			this->students[this->student_count].id = insert_info.id;
+			strncpy(this->students[this->student_count].name, insert_info.name, 30);
+			this->students[this->student_count].gpa = insert_info.gpa;
+			this->student_count++;
 
-		// Set future response
-		setResponse(this, RESPONSE_OK, NULL, 0);
+			// Set future response
+			setResponse(this, RESPONSE_OK, NULL, 0);
+		} else {
+			setResponse(this, RESPONSE_ERROR, NULL, 0);
+		}
+
 		break;
 
 	case DELETE_REQUEST:
