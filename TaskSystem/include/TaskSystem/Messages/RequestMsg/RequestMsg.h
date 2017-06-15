@@ -8,7 +8,7 @@
 
 typedef struct RequestMsg *RequestMsg;
 
-enum {SELECT_REQUEST, INSERT_REQUEST, DELETE_REQUEST};
+enum {SELECT_REQUEST, INSERT_REQUEST, DELETE_REQUEST, PING_REQUEST};
 
 // This message will be used over IPC and will perform copy
 

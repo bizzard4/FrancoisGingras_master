@@ -187,6 +187,12 @@ static void handle_RequestMsg(DatabaseTask this, RequestMsg requestMsg) {
 			setResponse(this, RESPONSE_ERROR, NULL, 0);
 		}
 		break;
+	case PING_REQUEST:
+#ifdef VERBOSE
+		printf("Ping query\n");
+#endif
+		setResponse(this, RESPONSE_OK, NULL, 0);
+		break;
 	default:
 		printf("Database error, invalid request type %d\n", requestMsg->request_type);
 	}

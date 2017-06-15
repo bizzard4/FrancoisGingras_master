@@ -65,7 +65,7 @@ static void start(ClientTask this){
 		req->sender_task_id = this->taskID;
 
 		int size = 0;
-		unsigned char* buffer;
+		unsigned char* buffer = NULL;
 
 		struct SelectInfo sel_data;
 		struct StudentInfo student_data;
@@ -97,6 +97,10 @@ static void start(ClientTask this){
 			req->request_type = DELETE_REQUEST;
 			memcpy(buffer, &sel_data, size);
 			break;
+		case 4:
+			// ping request
+			req->request_type = PING_REQUEST;
+			break;
 		default:
 			printf("Error in request type %d\n", req_type);
 			exit(-1);
@@ -109,9 +113,13 @@ static void start(ClientTask this){
 		}
 		printf("\n");
 #endif
-		req->setData(req, buffer, size);
+		if (buffer != NULL) {
+			req->setData(req, buffer, size);
+		}
 		send(this, (Message)req, database_id); 
-		free(buffer);
+		if (buffer != NULL) {
+			free(buffer);
+		}
 		req->destroy(req);
 		message_wait(this);
 
@@ -121,8 +129,8 @@ static void start(ClientTask this){
 	clock_gettime(CLOCK_MONOTONIC, &total_end);
 
 	// Time stats
-	struct timespec total_diff = diff(total_start, total_end);
-	printf("TOTAL-TIME-TEST %lds,%ldms - Read time\n", total_diff.tv_sec, total_diff.tv_nsec/1000000);
+	struct timespec send_diff = diff(total_start, total_end);
+	printf("CLIENT-SEND-TIME %lds,%ldms - Send time\n", send_diff.tv_sec, send_diff.tv_nsec/1000000);
 
 
 	done = 1;
