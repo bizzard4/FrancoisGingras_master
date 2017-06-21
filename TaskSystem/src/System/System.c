@@ -100,7 +100,7 @@ static void destroy(System this){
 }
 
 /*
- * Return 1 if a message is in the Q.
+ * Return 1 if the Q is empty.
  */
 static int message_immediate(System this, unsigned int taskID) {
 	check_Q_and_acquire(this, taskID);
