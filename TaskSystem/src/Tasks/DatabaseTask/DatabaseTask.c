@@ -18,7 +18,7 @@
 
 
 // Print query and result
-#define VERBOSE
+//#define VERBOSE
 
 
 

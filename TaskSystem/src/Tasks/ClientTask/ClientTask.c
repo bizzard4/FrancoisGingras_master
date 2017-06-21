@@ -25,7 +25,7 @@
 #include "TaskSystem/Tasks/ClientTask/generated.h"
 
 // Print query request
-#define VERBOSE
+//#define VERBOSE
 
 
 
