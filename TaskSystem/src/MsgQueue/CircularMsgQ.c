@@ -1,9 +1,6 @@
 #include "TaskSystem/CircularMsgQ.h"
 #include "TaskSystem/fatal.h"
 
-// TO REMOVE
-#include "TaskSystem/Messages/BarMsg/BarMsg.h"
-
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/mman.h>

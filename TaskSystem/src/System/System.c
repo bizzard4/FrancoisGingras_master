@@ -1,17 +1,6 @@
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
 
-// TO REMOVE
-#include "TaskSystem/Messages/BarMsg/BarMsg.h"
-#include "TaskSystem/Messages/TextMsg/TextMsg.h"
-#include "TaskSystem/Messages/RefIntArrayMsg/RefIntArrayMsg.h"
-#include "TaskSystem/Messages/TopologyMsg/TopologyMsg.h"
-#include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
-#include "TaskSystem/Messages/DoneMsg/DoneMsg.h"
-#include "TaskSystem/Messages/RefTwoDimIntArrayMsg/RefTwoDimIntArrayMsg.h"
-#include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
-#include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
-
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -32,6 +21,7 @@ void check_Q_and_acquire(System this, int taskID) {
 	}
 }
 
+
 static void send(System this, Message msg_data, int targetTaskID){
 	check_Q_and_acquire(this, targetTaskID);
 
@@ -46,38 +36,12 @@ static void send(System this, Message msg_data, int targetTaskID){
 
 static Message receive(System this, int targetTaskID){
 	Message msg = Dequeue(this->TaskTable[targetTaskID]);
-	// TODO : Map to rebind and clone
-	if (msg->tid == 1) { // BAR MSG
-		BarMsg_rebind(msg);
-		// Msg is still from shared memory, this need to be done inside the Dequeue or
-		// inside a lock
-		return msg->clone(msg);
-	} else if (msg->tid == 2) {
-		TextMsg_rebind(msg);
-		return msg->clone(msg);
-	} else if (msg->tid == 3) {
-		RefIntArrayMsg_rebind(msg);
-		return msg->clone(msg);
-	} else if (msg->tid == 4) {
-		TopologyMsg_rebind(msg);
-		return msg->clone(msg);
-	} else if (msg->tid == 5) {
-		IntArrayMsg_rebind(msg);
-		return msg->clone(msg);
-	} else if (msg->tid == 6) {
-		DoneMsg_rebind(msg);
-		return msg->clone(msg);
-	} else if (msg->tid == 7) {
-		RefTwoDimIntArrayMsg_rebind(msg);
-		return msg->clone(msg);
-	} else if (msg->tid == 8) {
-		RequestMsg_rebind(msg);
-		return msg->clone(msg);
-	} else if (msg->tid == 9) {
-		ResponseMsg_rebind(msg);
+	
+	// Rebind function
+	if (rebinder[msg->tid] != NULL) {
+		rebinder[msg->tid](msg);
 		return msg->clone(msg);
 	} else {
-		Queue tmp = this->TaskTable[targetTaskID];
 		printf("SYSTEM ERROR : Unkown message %p type %d, tag=%d\n", msg, msg->tid, msg->tag);
 		exit(-1);
 	}
@@ -208,6 +172,9 @@ System System_create(){
 	newRec->message_notify = message_notify;
 	newRec->message_wait = message_wait;
 
+	// Mapping
+	build_mapping();
+
 	// Local addr and SHM-id
 	for (int i = 0; i < MAX_TASK; i++) {
 		newRec->TaskTable[i] = NULL;
@@ -288,13 +255,15 @@ System System_acquire() {
 	newRec->message_notify = message_notify;
 	newRec->message_wait = message_wait;
 
+	// Mapping
+	build_mapping();
+
 	// Local addr to Q only
 	for (int i = 0; i < MAX_TASK; i++) {
 		newRec->TaskTable[i] = NULL;
 	}
 
 	return newRec;
-	return NULL;
 }
 
 static void* run(void* SystemRef) {

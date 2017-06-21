@@ -20,6 +20,7 @@
 
 #include "TaskSystem/CircularMsgQ.h"
 #include "TaskSystem/Messages/Message.h"
+#include "TaskSystem/SystemGenerated.h"
 
 #define SYSTEM_SHARED_MEM_NAME "/TS_System"
 #define MAX_TASK 100

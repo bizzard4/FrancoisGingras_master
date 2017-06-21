@@ -2,6 +2,7 @@
 
 set(SOURCES
   System/System.c 
+  System/SystemGenerated.c
   MsgQueue/CircularMsgQ.c
   Messages/TextMsg/TextMsg.c 
   Messages/BarMsg/BarMsg.c 
