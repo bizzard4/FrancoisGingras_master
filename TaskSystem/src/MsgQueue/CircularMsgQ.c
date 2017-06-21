@@ -1,5 +1,6 @@
 #include "TaskSystem/CircularMsgQ.h"
 #include "TaskSystem/fatal.h"
+#include "TaskSystem/SystemGenerated.h"
 
 #include <stdlib.h>
 #include <pthread.h>
@@ -196,6 +197,14 @@ ElementType Dequeue(Queue Q) {
 		#endif
 		
 		toret = message_part;
+		
+		// Rebind function
+		if (rebinder[toret->tid] != NULL) {
+			rebinder[toret->tid](toret);
+		} else {
+			printf("Q error : No mapping\n");
+			toret = NULL;
+		}
 	}
 	pthread_mutex_unlock (&(Q->QLock));
 	return toret;

@@ -1,5 +1,6 @@
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
+#include "TaskSystem/SystemGenerated.h"
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -36,14 +37,11 @@ static void send(System this, Message msg_data, int targetTaskID){
 
 static Message receive(System this, int targetTaskID){
 	Message msg = Dequeue(this->TaskTable[targetTaskID]);
-	
-	// Rebind function
-	if (rebinder[msg->tid] != NULL) {
-		rebinder[msg->tid](msg);
-		return msg->clone(msg);
-	} else {
-		printf("SYSTEM ERROR : Unkown message %p type %d, tag=%d\n", msg, msg->tid, msg->tag);
+	if (msg == NULL) {
+		printf("SYSTEM ERROR : Dequeue failed %p type %d, tag=%d\n", msg, msg->tid, msg->tag);
 		exit(-1);
+	} else {
+		return msg->clone(msg);
 	}
 }
 
