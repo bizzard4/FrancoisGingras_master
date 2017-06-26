@@ -50,8 +50,9 @@ static void start(ClientTask this){
 	printf("Client task has been started\n");
 
 	// Get the database task id
-	// TODO
-	int database_id = 1;
+	int database_id = Comm->repository_get_id(Comm, "database");
+	// Here we could include a busy loop to wait for the server to start if it is an issue.
+	printf("Client acquired database id = %d\n", database_id);
 
 	// Do 10 request
 	struct timespec total_start, total_end;

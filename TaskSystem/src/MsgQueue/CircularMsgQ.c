@@ -197,7 +197,7 @@ ElementType Dequeue(Queue Q) {
 		#endif
 		
 		toret = message_part;
-		
+
 		// Rebind function
 		if (rebinder[toret->tid] != NULL) {
 			rebinder[toret->tid](toret);

@@ -45,8 +45,10 @@ void setResponse(DatabaseTask this, int code, char* data, int data_size) {
 static void start(DatabaseTask this){
 	printf("Database task has been started\n");
 
+	// Set the name
+	Comm->repository_set_name(Comm, "database", this->taskID);
+
 	// Response to 10 requests
-	//for (int i = 0; i < 100; i++) {
 	int count = 0;
 	while ((count < max_request) || (max_request == -1)) {
 

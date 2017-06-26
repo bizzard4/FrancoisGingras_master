@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 #include <pthread.h>
 
 /**
@@ -126,6 +127,40 @@ static void message_wait(System this, unsigned int taskID) {
 	sched_yield();
 }
 
+/**
+ * Associate a name with a task id.
+ */
+static void repository_set_name(System this, char name[MAX_NAME_SIZE], unsigned int taskID) {
+	pthread_mutex_lock(&(this->data->sleepers_lock));
+	strncpy(this->data->task_name[taskID], name, MAX_NAME_SIZE);
+	this->data->task_has_name[taskID] = 1;
+	pthread_mutex_unlock(&(this->data->sleepers_lock));
+}
+
+/**
+ * Get the ID from a task name.
+ * Return < 0 in case of error.
+ */
+static int repository_get_id(System this, char task_name[MAX_NAME_SIZE]) {
+	int toret = -1;
+
+	// O(n) search for now
+	pthread_mutex_lock(&(this->data->sleepers_lock));
+	for (int i = 0; i < MAX_TASK; i++) {
+		if (this->data->task_has_name[i] == 1) {
+			int comp = strcmp(task_name, this->data->task_name[i]);
+			if (comp == 0) {
+				// Found it
+				toret = i;
+				break;
+			}
+		}
+	}
+	pthread_mutex_unlock(&(this->data->sleepers_lock));
+
+	return toret;
+}
+
 /*
  * With other objects, the create method was placed into a "generated"
  * header file. We don't do this here since everything in this file
@@ -169,6 +204,8 @@ System System_create(){
 	newRec->message_immediate = message_immediate;	
 	newRec->message_notify = message_notify;
 	newRec->message_wait = message_wait;
+	newRec->repository_set_name = repository_set_name;
+	newRec->repository_get_id = repository_get_id;
 
 	// Mapping
 	build_mapping();
@@ -200,15 +237,27 @@ System System_create(){
     pthread_condattr_init(&cond_attr);
     pthread_condattr_setpshared(&cond_attr, PTHREAD_PROCESS_SHARED);
 	pthread_mutex_lock(&(newRec->data->sleepers_lock));
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < MAX_TASK; i++) {
 		pthread_cond_init(&(newRec->data->sleepers[i]), &cond_attr);
 	}
 	pthread_mutex_unlock(&(newRec->data->sleepers_lock));
 
 	pthread_condattr_destroy(&cond_attr);
+
+
+	// Initialize repository
+	for (int i=0; i < MAX_TASK; i++) {
+		newRec->data->task_has_name[i] = 0;
+		strncpy(newRec->data->task_name[i], "", MAX_NAME_SIZE);
+	}
+	int mutex_repo_res = pthread_mutex_init(&(newRec->data->repository_mutex), &m_attr);
+	if (mutex_repo_res) {
+		printf("ERROR; Reposiroty pthread_mutex_int is %d\n", mutex_res);
+		exit(-1);
+	}
 	pthread_mutexattr_destroy(&m_attr);
 
-	// Create the wait/signal thread
+	// Create and start the wait/signal thread
 	int result = pthread_create(&(newRec->data->threadRef), NULL, run, (void *)newRec);
 	if (result){
 		printf("ERROR; return code from pthread_create() is %d\n", result);
@@ -252,6 +301,8 @@ System System_acquire() {
 	newRec->message_immediate = message_immediate;	
 	newRec->message_notify = message_notify;
 	newRec->message_wait = message_wait;
+	newRec->repository_set_name = repository_set_name;
+	newRec->repository_get_id = repository_get_id;
 
 	// Mapping
 	build_mapping();

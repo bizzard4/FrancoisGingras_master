@@ -24,6 +24,7 @@
 
 #define SYSTEM_SHARED_MEM_NAME "/TS_System"
 #define MAX_TASK 100
+#define MAX_NAME_SIZE 30
 
 typedef struct System *System;
 typedef struct SystemData *SystemData;
@@ -41,6 +42,10 @@ struct SystemData {
 	pthread_mutex_t sleepers_lock;
 	pthread_cond_t sleepers[MAX_TASK]; // This max limit the # of task, same limit than the task Q
 
+	// Repository
+	char task_name[MAX_NAME_SIZE][MAX_TASK];
+	int task_has_name[MAX_TASK];
+	pthread_mutex_t repository_mutex;
 };
 
 // System is stored locally
@@ -57,9 +62,13 @@ struct System {
 	unsigned int 	(*getNextTaskID)(System this);
 	void 	(*createMsgQ)(System this, unsigned int taskID);
 	void 	(*destroy)(System this);
+
 	void	(*message_notify)(System this, unsigned int taskID);
 	void	(*message_wait)(System this, unsigned int taskID);
 	int 	(*message_immediate)(System this, unsigned int taskID);
+
+	void 	(*repository_set_name)(System this, char name[MAX_NAME_SIZE], unsigned int taskID);
+	int 	(*repository_get_id)(System this, char task_name[MAX_NAME_SIZE]);
 };
 
 static void *run(void* SystemRef);
