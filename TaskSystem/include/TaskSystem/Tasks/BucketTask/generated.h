@@ -104,5 +104,11 @@ static void message_wait(BucketTask this) {
 static int message_immediate(BucketTask this) {
 	return Comm->message_immediate(Comm, this->taskID);
 }
+static void repository_set_name(BucketTask this, char name[MAX_NAME_SIZE]) {
+	Comm->repository_set_name(Comm, name, this->taskID);
+}
+static int repository_get_id(BucketTask this, char task_name[MAX_NAME_SIZE]) {
+	return Comm->repository_get_id(Comm, task_name);
+}
 
 #endif /* BUCKETTASK_GENERATED_H_ */

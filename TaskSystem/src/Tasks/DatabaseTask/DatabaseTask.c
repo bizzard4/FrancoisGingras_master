@@ -46,7 +46,7 @@ static void start(DatabaseTask this){
 	printf("Database task has been started\n");
 
 	// Set the name
-	Comm->repository_set_name(Comm, "database", this->taskID);
+	repository_set_name(this, "database");
 
 	// Response to 10 requests
 	int count = 0;

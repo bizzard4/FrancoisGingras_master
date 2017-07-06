@@ -18,6 +18,9 @@ static void message_notify(ClientTask this);
 static void message_wait(ClientTask this);
 static int message_immediate(ClientTask this);
 
+static void repository_set_name(ClientTask this, char name[MAX_NAME_SIZE]);
+static int repository_get_id(ClientTask this, char task_name[MAX_NAME_SIZE]);
+
 static void *run(void *ClientTaskRef);
 static void start(ClientTask this);
 
@@ -77,6 +80,12 @@ static void message_wait(ClientTask this) {
 }
 static int message_immediate(ClientTask this) {
 	return Comm->message_immediate(Comm, this->taskID);
+}
+static void repository_set_name(ClientTask this, char name[MAX_NAME_SIZE]) {
+	Comm->repository_set_name(Comm, name, this->taskID);
+}
+static int repository_get_id(ClientTask this, char task_name[MAX_NAME_SIZE]) {
+	return Comm->repository_get_id(Comm, task_name);
 }
 
 

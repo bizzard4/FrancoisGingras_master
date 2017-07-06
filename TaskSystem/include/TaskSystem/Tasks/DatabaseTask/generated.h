@@ -101,6 +101,11 @@ static void message_wait(DatabaseTask this) {
 static int message_immediate(DatabaseTask this) {
 	return Comm->message_immediate(Comm, this->taskID);
 }
-
+static void repository_set_name(DatabaseTask this, char name[MAX_NAME_SIZE]) {
+	Comm->repository_set_name(Comm, name, this->taskID);
+}
+static int repository_get_id(DatabaseTask this, char task_name[MAX_NAME_SIZE]) {
+	return Comm->repository_get_id(Comm, task_name);
+}
 
 #endif /* DATABASETASK_GENERATED_H_ */

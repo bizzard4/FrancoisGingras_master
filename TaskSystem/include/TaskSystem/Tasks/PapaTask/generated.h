@@ -78,6 +78,12 @@ static void message_wait(PapaTask this) {
 static int message_immediate(PapaTask this) {
 	return Comm->message_immediate(Comm, this->taskID);
 }
+static void repository_set_name(PapaTask this, char name[MAX_NAME_SIZE]) {
+	Comm->repository_set_name(Comm, name, this->taskID);
+}
+static int repository_get_id(PapaTask this, char task_name[MAX_NAME_SIZE]) {
+	return Comm->repository_get_id(Comm, task_name);
+}
 
 
 #endif /* PAPATASK_GENERATED_H_ */
