@@ -20,6 +20,8 @@ set(SOURCES
   Tasks/BucketTask/BucketTask.c
   Tasks/DatabaseTask/DatabaseTask.c
   Tasks/ClientTask/ClientTask.c
+  Tasks/WeatherStationTask/WeatherStationTask.c
+  Tasks/WeatherClientTask/WeatherClientTask.c
   TimeHelper.c
 )
 

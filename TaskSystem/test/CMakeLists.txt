@@ -21,6 +21,12 @@ target_link_libraries(db_client_test TaskSystem)
 add_executable(circular_msgq_test circular_msgq_test.c)
 target_link_libraries(circular_msgq_test TaskSystem)
 
+add_executable(wt_start_test wt_start_test.c)
+target_link_libraries(wt_start_test TaskSystem)
+
+add_executable(wt_client_test wt_client_test.c)
+target_link_libraries(wt_client_test TaskSystem)
+
 enable_testing()
 add_test(system_test system_test)
 add_test(simple_task_test simple_task_test)

@@ -4,5 +4,17 @@ Build instruction
 3) cmake ..
 4) cmake --build .
 
+Add a test to build
+1) Add the c file into the test directory
+2) Update the CMakeList.txt in the test directory
+3) Regenerate bin directory
+
+Add a task to build
+1) Add <task name>.c file in src/Tasks/<task name>
+2) Add generated.h and <task name>.h in include/TaskSystem/Tasks/<task name>
+
+Add a new message to build
+1) Follow task instruction but using messages folder src/Messages and include/TaskSystem/Messages
+
 Regenerate eclipse workspace
 1) cmake -G"Eclipse CDT4 - Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug ..
