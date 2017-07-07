@@ -18,6 +18,9 @@ static void message_notify(PapaTask this);
 static void message_wait(PapaTask this);
 static int message_immediate(PapaTask this);
 
+static void repository_set_name(PapaTask this, char name[MAX_NAME_SIZE]);
+static int repository_get_id(PapaTask this, char task_name[MAX_NAME_SIZE]);
+
 static void *run(void *PapaTaskRef);
 static void start(PapaTask this);
 

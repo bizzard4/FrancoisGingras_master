@@ -16,6 +16,9 @@ static void message_notify(SampleSortTask this);
 static void message_wait(SampleSortTask this);
 static int message_immediate(SampleSortTask this);
 
+static void repository_set_name(SampleSortTask this, char name[MAX_NAME_SIZE]);
+static int repository_get_id(SampleSortTask this, char task_name[MAX_NAME_SIZE]);
+
 static void *run(void *SampleSortTaskRef);
 static void start(SampleSortTask this);
 

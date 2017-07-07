@@ -16,6 +16,9 @@ static void message_notify(BucketTask this);
 static void message_wait(BucketTask this);
 static int message_immediate(BucketTask this);
 
+static void repository_set_name(BucketTask this, char name[MAX_NAME_SIZE]);
+static int repository_get_id(BucketTask this, char task_name[MAX_NAME_SIZE]);
+
 static void *run(void *BucketTaskkRef);
 static void start(BucketTask this);
 

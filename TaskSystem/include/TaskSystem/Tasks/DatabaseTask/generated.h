@@ -23,6 +23,9 @@ static void message_notify(DatabaseTask this);
 static void message_wait(DatabaseTask this);
 static int message_immediate(DatabaseTask this);
 
+static void repository_set_name(DatabaseTask this, char name[MAX_NAME_SIZE]);
+static int repository_get_id(DatabaseTask this, char task_name[MAX_NAME_SIZE]);
+
 static void *run(void *DatabaseTaskRef);
 static void start(DatabaseTask this);
 
