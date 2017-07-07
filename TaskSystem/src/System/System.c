@@ -161,6 +161,33 @@ static int repository_get_id(System this, char task_name[MAX_NAME_SIZE]) {
 	return toret;
 }
 
+/**
+ * Function that encapsulate common code for create and acquire.
+ */
+void System_initialize(System sys) {
+	// Methods
+	sys->send = send;
+	sys->receive = receive;
+	sys->dropMsg = dropMsg;
+	sys->getMsgTag = getMsgTag;
+	sys->getNextTaskID = getNextTaskID;
+	sys->createMsgQ = createMsgQ;;
+	sys->destroy = destroy;
+	sys->message_immediate = message_immediate;	
+	sys->message_notify = message_notify;
+	sys->message_wait = message_wait;
+	sys->repository_set_name = repository_set_name;
+	sys->repository_get_id = repository_get_id;
+
+	// Mapping
+	build_mapping();
+
+	// Local addr and SHM-id
+	for (int i = 0; i < MAX_TASK; i++) {
+		sys->TaskTable[i] = NULL;
+	}
+}
+
 /*
  * With other objects, the create method was placed into a "generated"
  * header file. We don't do this here since everything in this file
@@ -193,27 +220,8 @@ System System_create(){
 		FatalError("Cannot allocate memory in System_create");
 	newRec->data = shared_data;
 
-	// Methods
-	newRec->send = send;
-	newRec->receive = receive;
-	newRec->dropMsg = dropMsg;
-	newRec->getMsgTag = getMsgTag;
-	newRec->getNextTaskID = getNextTaskID;
-	newRec->createMsgQ = createMsgQ;;
-	newRec->destroy = destroy;
-	newRec->message_immediate = message_immediate;	
-	newRec->message_notify = message_notify;
-	newRec->message_wait = message_wait;
-	newRec->repository_set_name = repository_set_name;
-	newRec->repository_get_id = repository_get_id;
-
-	// Mapping
-	build_mapping();
-
-	// Local addr and SHM-id
-	for (int i = 0; i < MAX_TASK; i++) {
-		newRec->TaskTable[i] = NULL;
-	}
+	// Initialize local data
+	System_initialize(newRec);
 
 	// Initialize ID and ID mutex
 	newRec->data->nextTaskID = 1;
@@ -290,27 +298,8 @@ System System_acquire() {
 	System newRec = malloc(sizeof(struct System));
 	newRec->data = shared_data;
 
-	// Methods
-	newRec->send = send;
-	newRec->receive = receive;
-	newRec->dropMsg = dropMsg;
-	newRec->getMsgTag = getMsgTag;
-	newRec->getNextTaskID = getNextTaskID;
-	newRec->createMsgQ = createMsgQ;;
-	newRec->destroy = destroy;
-	newRec->message_immediate = message_immediate;	
-	newRec->message_notify = message_notify;
-	newRec->message_wait = message_wait;
-	newRec->repository_set_name = repository_set_name;
-	newRec->repository_get_id = repository_get_id;
-
-	// Mapping
-	build_mapping();
-
-	// Local addr to Q only
-	for (int i = 0; i < MAX_TASK; i++) {
-		newRec->TaskTable[i] = NULL;
-	}
+	// Initialize local data
+	System_initialize(newRec);
 
 	return newRec;
 }
