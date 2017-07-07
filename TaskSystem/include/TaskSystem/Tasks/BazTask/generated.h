@@ -15,6 +15,13 @@
 static void send(BazTask this, Message data, int targetBazTaskID);
 static void receive(BazTask this);
 
+static void message_notify(BazTask this);
+static void message_wait(BazTask this);
+static int message_immediate(BazTask this);
+
+static void repository_set_name(BazTask this, char name[MAX_NAME_SIZE]);
+static int repository_get_id(BazTask this, char task_name[MAX_NAME_SIZE]);
+
 static void *run(void *BazTaskRef);
 static void start(BazTask this);
 
@@ -57,7 +64,6 @@ unsigned int BazTask_create(){
 // the pthread initialization. Ultimately, it just calls the programmer's
 // start function.
 static void *run(void *BazTaskRef){
-
 	BazTask this = (BazTask)BazTaskRef;
 	start(this);
 	pthread_exit(NULL);
@@ -70,6 +76,21 @@ static void send(BazTask this, Message data, int targetBazTaskID){
 	Comm->send(Comm, data, targetBazTaskID);
 }
 
+static void message_notify(BazTask this) {
+	Comm->message_notify(Comm, this->taskID);
+}
+static void message_wait(BazTask this) {
+	Comm->message_wait(Comm, this->taskID);
+}
+static int message_immediate(BazTask this) {
+	return Comm->message_immediate(Comm, this->taskID);
+}
+static void repository_set_name(BazTask this, char name[MAX_NAME_SIZE]) {
+	Comm->repository_set_name(Comm, name, this->taskID);
+}
+static int repository_get_id(BazTask this, char task_name[MAX_NAME_SIZE]) {
+	return Comm->repository_get_id(Comm, task_name);
+}
 
 /***************************************************************/
 

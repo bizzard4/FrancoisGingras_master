@@ -15,6 +15,13 @@
 static void send(FooTask this, Message data, int targetFooTaskID);
 static void receive(FooTask this);
 
+static void message_notify(FooTask this);
+static void message_wait(FooTask this);
+static int message_immediate(FooTask this);
+
+static void repository_set_name(FooTask this, char name[MAX_NAME_SIZE]);
+static int repository_get_id(FooTask this, char task_name[MAX_NAME_SIZE]);
+
 static void *run(void *FooTaskRef);
 static void start(FooTask this);
 
@@ -67,6 +74,22 @@ static void *run(void *FooTaskRef){
 // does the same thing
 static void send(FooTask this, Message data, int targetFooTaskID){
 	Comm->send(Comm, data, targetFooTaskID);
+}
+
+static void message_notify(FooTask this) {
+	Comm->message_notify(Comm, this->taskID);
+}
+static void message_wait(FooTask this) {
+	Comm->message_wait(Comm, this->taskID);
+}
+static int message_immediate(FooTask this) {
+	return Comm->message_immediate(Comm, this->taskID);
+}
+static void repository_set_name(FooTask this, char name[MAX_NAME_SIZE]) {
+	Comm->repository_set_name(Comm, name, this->taskID);
+}
+static int repository_get_id(FooTask this, char task_name[MAX_NAME_SIZE]) {
+	return Comm->repository_get_id(Comm, task_name);
 }
 
 
