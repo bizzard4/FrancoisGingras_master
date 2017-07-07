@@ -7,6 +7,8 @@
 #include "TaskSystem/Messages/BarMsg/BarMsg.h"
 #include "TaskSystem/Messages/ResponseMsg/ResponseMsg.h"
 #include "TaskSystem/Messages/RequestMsg/RequestMsg.h"
+#include "TaskSystem/System.h"
+#include "TaskSystem/SystemGenerated.h"
 
 /// Pre-def for testing purpose
 struct Queue
@@ -21,6 +23,9 @@ struct Queue
 
 
 int main(void) {
+	// Needed for mapping to work
+	build_mapping();
+
 	Queue q = CreateQueue("/TEST_CIRCULAR_MSG_Q");
 
 	printf("IsEmpty=%d\n", IsEmpty(q));
