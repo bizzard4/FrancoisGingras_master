@@ -5,7 +5,7 @@
 
 #include "TaskSystem/System.h"
 #include "test_util.h"
-#include "TaskSystem/Tasks/WeatherStationTask/WeatherStationTask.h"
+#include "TaskSystem/Tasks/WeatherClientTask/WeatherClientTask.h"
 #include "TaskSystem/Messages/TextMsg/TextMsg.h"
 
 System Comm;

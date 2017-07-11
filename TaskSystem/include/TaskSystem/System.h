@@ -22,8 +22,20 @@
 #include "TaskSystem/Messages/Message.h"
 #include "TaskSystem/SystemGenerated.h"
 
+/**
+ * Shared segment name to use for the system.
+ */
 #define SYSTEM_SHARED_MEM_NAME "/TS_System"
+
+/**
+ * Maximum number of task. Rising this will raise shared segment
+ * size.
+ */
 #define MAX_TASK 100
+
+/**
+ * Maximum size of a task name.
+ */
 #define MAX_NAME_SIZE 30
 
 typedef struct System *System;
@@ -55,7 +67,7 @@ struct System {
 	Queue TaskTable[MAX_TASK];
 
 	// "class" methods
-	void 	(*send)(System this, Message msg_data, int targetTaskID);
+	int 	(*send)(System this, Message msg_data, int targetTaskID);
 	Message (*receive)(System this, int targetTaskID);
 	void 	(*dropMsg)(System this, int targetTaskID);
 	int 	(*getMsgTag)(System this, int targetTaskID);

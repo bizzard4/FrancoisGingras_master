@@ -23,19 +23,20 @@ void check_Q_and_acquire(System this, int taskID) {
 	}
 }
 
-
-static void send(System this, Message msg_data, int targetTaskID){
+/**
+ * Send a message to a given task.
+ * Acquire the Q if needed.
+ * Return 1 if success, 0 for error.
+ */
+static int send(System this, Message msg_data, int targetTaskID){
 	check_Q_and_acquire(this, targetTaskID);
 
-	// TODO : Need to check enq return value to detect array full, busy loop may be used
-	int res = Enqueue(this->TaskTable[targetTaskID], msg_data);
-	if (res == 0) {
-		printf("System error: SEND FAILED to Task %d\n", targetTaskID);
-		exit(-1);
-	}
+	return Enqueue(this->TaskTable[targetTaskID], msg_data);
 }
 
-
+/**
+ * Receive next message from a given task.
+ */
 static Message receive(System this, int targetTaskID){
 	Message msg = Dequeue(this->TaskTable[targetTaskID]);
 	if (msg == NULL) {
@@ -46,13 +47,18 @@ static Message receive(System this, int targetTaskID){
 	}
 }
 
-
+/**
+ * Drop next msg from a given task.
+ */
 static void dropMsg(System this, int targetTaskID){
 	check_Q_and_acquire(this, targetTaskID);
 
 	Dequeue(this->TaskTable[targetTaskID]);
 }
 
+/**
+ * Return next msg tag of a given task.
+ */
 static int getMsgTag(System this, int targetTaskID){
 	check_Q_and_acquire(this, targetTaskID);
 
@@ -64,7 +70,9 @@ static int getMsgTag(System this, int targetTaskID){
 	return msg->tag; // USING METHOD WILL FAIL IF NOT REBOUND
 }
 
-
+/**
+ * Return next task ID to use.
+ */
 static unsigned int getNextTaskID(System this){
 	pthread_mutex_lock(&(this->data->TaskIDLock));
 	unsigned int nextID = this->data->nextTaskID;
@@ -75,13 +83,18 @@ static unsigned int getNextTaskID(System this){
 }
 
 
+/**
+ * Create a new msg Q for a given ID
+ */
 static void createMsgQ(System this, unsigned int taskID){
 	char buf[15];
 	sprintf(buf, "/TS_T%d", taskID);
 	this->TaskTable[taskID] = CreateQueue(buf);
 }
 
-
+/**
+ * Destroy the system and his shared memory segment.
+ */
 static void destroy(System this){
 	this->data->shutdown_signal = 1;
 	// Wait for signal/wait loop to finish
