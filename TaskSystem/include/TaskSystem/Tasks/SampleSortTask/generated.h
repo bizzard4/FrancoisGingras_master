@@ -9,7 +9,7 @@
  *  System generated code
  ******************************/
 
-static void send(SampleSortTask this, Message data, int targetTaskID);
+static int send(SampleSortTask this, Message data, int targetTaskID);
 static void receive(SampleSortTask this);
 
 static void message_notify(SampleSortTask this);
@@ -72,8 +72,8 @@ static void *run(void *SampleSortTaskRef){
 	pthread_exit(NULL);
 }
 
-static void send(SampleSortTask this, Message data, int targetID){
-	Comm->send(Comm, data, targetID);
+static int send(SampleSortTask this, Message data, int targetID){
+	return Comm->send(Comm, data, targetID);
 }
 
 static void message_notify(SampleSortTask this) {

@@ -9,7 +9,7 @@
  *  System generated code
  ******************************/
 
-static void send(BucketTask this, Message data, int targetTaskID);
+static int send(BucketTask this, Message data, int targetTaskID);
 static void receive(BucketTask this);
 
 static void message_notify(BucketTask this);
@@ -90,12 +90,13 @@ static void *run(void *BucketTaskRef){
 	pthread_exit(NULL);
 }
 
-static void send(BucketTask this, Message data, int targetID){
+static int send(BucketTask this, Message data, int targetID){
 	struct timespec send_start, send_end;
 	clock_gettime(CLOCK_MONOTONIC, &send_start);
-	Comm->send(Comm, data, targetID);
+	int res = Comm->send(Comm, data, targetID);
 	clock_gettime(CLOCK_MONOTONIC, &send_end);
 	this->send_time_acc = tsAdd(this->send_time_acc, diff(send_start, send_end));
+	return res;
 }
 
 static void message_notify(BucketTask this) {
