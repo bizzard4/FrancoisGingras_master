@@ -23,17 +23,24 @@ int main(int argc, char *argv[]) {
 
 	// Read the station name
 	char* station_name;
-	if (argc == 2) {
+	int acquire_system;
+	if (argc == 3) {
 		station_name = argv[1];
+		acquire_system = atoi(argv[2]);
 	} else {
-		printf("Usage : wt_start_test station_name\n");
+		printf("Usage : wt_start_test station_name [0/1] \n");
 		exit(-1);
 	}
 
 
 	// Database initialize the system
-	// TODO: Acquire if existing
-	Comm = System_create();
+	// Because system do not have any try_acquire capability, I pass
+	// to the test argument the instruction to acquire or create.
+	if (acquire_system == 0) {
+		Comm = System_create();
+	} else {
+		Comm = System_acquire();
+	}
 	printf("System addr %p\n", Comm);
 	printf("System shared data addr %p\n", Comm->data);
 
@@ -50,8 +57,9 @@ int main(int argc, char *argv[]) {
 
 	// Destroy the shared memory, if this is done before a client is done
 	// the client will have error
-	// TODO : If acquired, do not destroy
-	Comm->destroy(Comm);
+	if (acquire_system == 0) {
+		Comm->destroy(Comm);
+	}
 
 	return EXIT_SUCCESS;
 }
