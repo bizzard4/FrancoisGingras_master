@@ -7,7 +7,7 @@
 #include <pthread.h>
 
 #include "TaskSystem/Messages/TextMsg/TextMsg.h"
-#include "TaskSystem/Messages/BarMsg/BarMsg.h"
+#include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
 
 /******************************
  *  System generated code
@@ -27,7 +27,7 @@ static void *run(void *WeatherClientTaskRef);
 static void start(WeatherClientTask this);
 
 static void handle_WeatherStationNameMsg(WeatherClientTask this, TextMsg textMsg);
-static void handle_PostWeatherMsg(WeatherClientTask this, BarMsg barMsg);
+static void handle_PostWeatherMsg(WeatherClientTask this, IntArrayMsg intArrayMsg);
 
 
 // The WeatherClientTask "class"

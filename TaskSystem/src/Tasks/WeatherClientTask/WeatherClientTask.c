@@ -69,7 +69,7 @@ static void receive(WeatherClientTask this){
 		break;
 	case POST_WEATHER_MSG: // Should never receive this
 		msg = Comm->receive(Comm, this->taskID);
-		handle_PostWeatherMsg(this, (BarMsg)msg);
+		handle_PostWeatherMsg(this, (IntArrayMsg)msg);
 		break;
 	default:
 		printf("\nTask %d No Handler for tag = %d, dropping message! \n", this->taskID, tag);
@@ -82,7 +82,6 @@ static void handle_WeatherStationNameMsg(WeatherClientTask this, TextMsg textMsg
 	strcpy(this->station_name, textMsg->getMsg(textMsg));
 }
 
-static void handle_PostWeatherMsg(WeatherClientTask this, BarMsg barMsg) {
-	// TODO : Receive weather station id as a reference
-	printf("Weather %d C\n", barMsg->getValue(barMsg));
+static void handle_PostWeatherMsg(WeatherClientTask this, IntArrayMsg intArrayMsg) {
+	printf("Station id %d Weather %d C\n", intArrayMsg->getValue(intArrayMsg, 0), intArrayMsg->getValue(intArrayMsg, 1));
 }

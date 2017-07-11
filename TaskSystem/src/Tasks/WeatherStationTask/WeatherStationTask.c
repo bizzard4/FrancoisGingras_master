@@ -2,6 +2,8 @@
 
 #include "TaskSystem/System.h"
 #include "TaskSystem/fatal.h"
+#include "TaskSystem/Messages/IntArrayMsg/IntArrayMsg.h"
+#include "TaskSystem/Messages/BarMsg/BarMsg.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,8 +52,9 @@ static void start(WeatherStationTask this){
 		loop_count++;
 		if ((loop_count % 10000000) == 0) {
 			// Broadcast weather to all subscriber
-			BarMsg temp_msg = BarMsg_create(POST_WEATHER_MSG);
-			temp_msg->setValue(temp_msg, 31); // 31 degree let say
+			IntArrayMsg temp_msg = IntArrayMsg_create(POST_WEATHER_MSG);
+			int vals[2] = {this->taskID, 31};
+			temp_msg->setValues(temp_msg, 2, vals); // taskid + 31 degree let say
 			for (int i = 0; i < this->sub_count; i++) {
 				send(this, (Message)temp_msg, this->subs[i]);
 			}
