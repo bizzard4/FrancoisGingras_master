@@ -1,13 +1,15 @@
 #!/bin/bash
 
-echo "Running multiple databas client N=$1 Req=$2 ReqType=$4"
+echo "Running multiple databas client Nmax=$1 Req=$2 ReqType=$3"
 
 
 
 echo "Running code ->"
-for n in $(seq 1 $1)
+for i in $(seq 1 $1)
 do
-	test/db_client_test $2 $3 > db_out_$n.txt &
+	echo "$i/$1"
+	echo "db_out_$1$i.txt"
+	test/db_client_test $2 $3 > db_out_$1$i.txt &
 done
 
 wait
